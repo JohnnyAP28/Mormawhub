@@ -179,14 +179,14 @@ local function makeAction(text, y)
     return b
 end
 
-local lowGraphics = makeAction("ULTRA LEVE — mínimo visual", 38)
-local shadows = makeAction("BAIXO — desempenho", 76)
-local effects = makeAction("MÉDIO — equilibrado", 114)
-local highGraphics = makeAction("ALTO — qualidade visual", 152)
-local realisticGraphics = makeAction("REALISTA — iluminação original", 190)
-local blackSky = makeAction("Ativar céu totalmente escuro", 228)
-local visualCleanup = makeAction("Reduzir partículas e efeitos animados", 266)
-local restore = makeAction("Restaurar configurações guardadas", 304)
+local lowGraphics = makeAction("ULTRA LEVE — mínimo visual", 46)
+local shadows = makeAction("BAIXO — desempenho", 84)
+local effects = makeAction("MÉDIO — equilibrado", 122)
+local highGraphics = makeAction("ALTO — qualidade visual", 160)
+local realisticGraphics = makeAction("REALISTA — iluminação original", 198)
+local blackSky = makeAction("Ativar céu totalmente escuro", 236)
+local visualCleanup = makeAction("Reduzir partículas e efeitos animados", 274)
+local restore = makeAction("Restaurar configurações guardadas", 312)
 lowGraphics.Size = UDim2.new(1, 0, 0, 32)
 shadows.Size = UDim2.new(1, 0, 0, 32)
 effects.Size = UDim2.new(1, 0, 0, 32)
@@ -493,7 +493,13 @@ visualCleanup.Activated:Connect(function()
     captureVisualEffects()
     for obj, enabled in pairs(visualEffectsSnapshot) do
         if obj and obj.Parent and isReducibleVisual(obj) then
-            pcall(function() obj.Enabled = visualCleanupEnabled and false or enabled end)
+            pcall(function()
+                if visualCleanupEnabled then
+                    obj.Enabled = false
+                else
+                    obj.Enabled = enabled
+                end
+            end)
         end
     end
     visualCleanup.Text = visualCleanupEnabled and "   Restaurar partículas e efeitos visuais" or "   Reduzir partículas e efeitos animados"
