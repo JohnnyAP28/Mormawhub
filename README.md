@@ -16,7 +16,7 @@ Projeto inicial do MormawHub com interface escura, identificação brasileira, m
 4. Copie o endereço `raw.githubusercontent.com` gerado pelo GitHub.
 5. Atualize a URL no arquivo `Loader.example.lua` com seu usuário e repositório reais.
 
-O projeto não foi publicado automaticamente; é necessário realizar esses passos na sua conta.
+O arquivo principal e as instruções podem ser atualizados diretamente no repositório. O loader de exemplo ainda usa um marcador e precisa ser ajustado antes de ser usado.
 
 ## Carregador de exemplo
 
@@ -27,6 +27,18 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MormawHub
 ```
 
 Esse formato exige um ambiente que permita `loadstring` e requisições HTTP. Para desenvolvimento oficial no Roblox Studio, prefira colocar o conteúdo como um `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
+
+## Atualização — checklist do Halloween
+
+A interface agora tem quatro abas: **Início**, **Halloween**, **Gráficos** e **Ajustes**.
+
+- **Halloween:** checklist manual com nove etapas relacionadas ao evento, incluindo os quatro objetos da missão do Echo, Ghost Fisherman, Haunted Rod, Phantom Express/área Spectral e Candy Corn. Marque/desmarque cada etapa e acompanhe o progresso.
+- **Ajustes:** zerar o checklist e mostrar/ocultar a dica do evento.
+- **Gráficos:** mantém os controles anteriores de iluminação, sombras e efeitos locais.
+- **Início:** resumo das seções.
+- O painel continua arrastável, minimizável e fechável, com botão flutuante para reabrir.
+
+**Limites:** o checklist é apenas um rastreador manual local; não confirma objetivos no jogo, não salva progresso entre execuções e não se sincroniza com a conta Roblox. As funções de farm automático, roubo automático, coleta automática, voo, teleporte e alteração de velocidade para obter vantagem em experiências de terceiros não foram adicionadas. Mecânicas de gameplay devem ser implementadas e testadas no próprio jogo do desenvolvedor, com validação no servidor.
 
 ## O que funciona nesta versão
 
