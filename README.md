@@ -33,10 +33,12 @@ Não deixe um UserId de exemplo sem substituir. Não instale o script de servido
 ### Interface e navegação
 
 - Tema escuro e identificação MormawHub/Brasil.
-- Painel arrastável com mouse/toque.
+- Painel arrastável com mouse/toque, redimensionado para caber na tela e adaptado à rotação do dispositivo.
+- Abas com rolagem horizontal em telas estreitas.
 - Minimizar para um ícone flutuante e botão para reabrir.
-- Botão `×` para fechar.
+- Botão `×` para fechar; ao fechar ou executar o script novamente, o painel tenta restaurar a iluminação e os efeitos visuais alterados e desconectar ouvintes externos.
 - **Ajustes > Tecla para minimizar:** toque no botão e pressione uma tecla do teclado. O padrão é `RightShift`. A escolha é local e vale enquanto a interface estiver aberta.
+- **Ajustes > Recentralizar painel:** volta a janela para o centro da tela.
 
 ### Halloween / evento
 
@@ -53,8 +55,9 @@ O vídeo mostra um aviso de florada de borboletas com instruções para pegar um
 
 - **ULTRA LEVE:** reduz sombras, pós-efeitos e tenta ocultar efeitos visuais compatíveis encontrados no cliente.
 - **BAIXO:** iluminação simplificada.
-- **MÉDIO:** perfil intermediário.
+- **MÉDIO:** perfil intermediário, preservando o estado original de cada pós-efeito em vez de ativar indiscriminadamente todos.
 - **ALTO / REALISTA:** restaura valores de iluminação capturados na inicialização.
+- **Atualizar captura de efeitos visuais:** inclui efeitos criados durante a sessão na referência de restauração; se a redução estiver ativa, aplica-a aos efeitos novos.
 - **Céu totalmente escuro:** escurece a iluminação local e remove temporariamente objetos `Sky` encontrados em `Lighting`.
 - **Reduzir partículas e efeitos animados:** alterna efeitos locais compatíveis.
 - **Restaurar configurações guardadas:** tenta restaurar iluminação e efeitos registrados.
@@ -63,7 +66,7 @@ Os perfis não alteram o controle global de qualidade gráfica do Roblox e não 
 
 ### Player
 
-Mostra nome, estado do personagem, Humanoid, vida e velocidade atual. Não aplica mudanças de movimento por conta própria.
+Mostra nome, estado do personagem, Humanoid, vida, velocidade e disponibilidade da raiz do personagem. Vida e velocidade são atualizadas por eventos do Humanoid, e as conexões antigas são limpas quando o personagem muda. Não aplica mudanças de movimento por conta própria.
 
 ### Testes e métricas
 
