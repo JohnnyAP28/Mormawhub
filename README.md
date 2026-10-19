@@ -40,18 +40,37 @@ A interface agora tem quatro abas: **Início**, **Halloween**, **Gráficos** e *
 
 **Limites:** o checklist é apenas um rastreador manual local; não confirma objetivos no jogo, não salva progresso entre execuções e não se sincroniza com a conta Roblox. As funções de farm automático, roubo automático, coleta automática, voo, teleporte e alteração de velocidade para obter vantagem em experiências de terceiros não foram adicionadas. Mecânicas de gameplay devem ser implementadas e testadas no próprio jogo do desenvolvedor, com validação no servidor.
 
+## Atualização — perfis gráficos e aba Player
+
+A aba **Gráficos** agora oferece estes perfis locais:
+
+- **ULTRA LEVE:** desativa sombras e pós-processamento e tenta desativar partículas, trilhas, beams, fogo, fumaça, brilhos e highlights visuais encontrados no cliente.
+- **BAIXO:** reduz iluminação e remove sombras/pós-processamento.
+- **MÉDIO:** perfil intermediário baseado na iluminação capturada no início.
+- **ALTO:** restaura os valores originais de iluminação e ativa pós-efeitos.
+- **REALISTA:** restaura a iluminação e os pós-efeitos capturados quando o script iniciou.
+- **Céu totalmente escuro:** remove temporariamente os objetos Sky encontrados em Lighting e escurece a iluminação local.
+- **Reduzir partículas e efeitos animados:** alterna a visibilidade local de efeitos compatíveis.
+- **Restaurar configurações guardadas:** tenta restaurar iluminação, céu, pós-efeitos e os efeitos visuais registrados.
+
+A aba **Player** mostra o nome do jogador, se o personagem/Humanoid estão carregados, a vida e a velocidade atual, sem modificar os atributos de movimento.
+
+### Limites técnicos
+
+Essas opções alteram propriedades locais que o cliente consegue acessar; elas não mudam a qualidade gráfica global configurada pelo menu do Roblox, não garantem FPS específico e não conseguem remover universalmente todas as animações, skins, ovos, eventos ou efeitos controlados pelo servidor. Alguns efeitos podem reaparecer ou não ser alteráveis no cliente. O modo de céu escuro pode dificultar a visibilidade. O perfil “realista” restaura valores capturados, mas não força o motor gráfico para a qualidade máxima. Para um jogo próprio, a redução de animações e efeitos deve ser implementada no código da experiência, com suporte explícito a configurações de desempenho.
+
 ## O que funciona nesta versão
 
 - Interface com nome MormawHub e bandeira brasileira.
 - Minimizar esconde a janela e deixa apenas o botão flutuante; tocar nele reabre.
 - Botão `×` fecha a interface.
 - Painel arrastável por mouse/toque.
-- Perfil local de gráficos reduzidos: desativa sombras globais, efeitos de pós-processamento, ajusta brilho e neblina.
+- Perfis gráficos locais: ultra leve, baixo, médio, alto e restauração da iluminação original; modo de céu escuro e alternância de efeitos visuais compatíveis.
 - Opção de restaurar valores de iluminação capturados quando o script iniciou.
 
 ## Limitações importantes
 
 - As configurações de iluminação/efeitos não controlam todos os gráficos internos do Roblox nem garantem aumento específico de FPS.
-- Não existe um limitador de FPS real nesta versão.
+- Não existe um limitador ou desbloqueador de FPS real nesta versão; o script não consegue forçar o FPS além dos controles suportados pelo cliente Roblox.
 - As ações de farm, roubo, coleta e teleporte não estão implementadas. Não use este projeto para automatizar ou interferir em jogos de terceiros. Para essas mecânicas, implemente a lógica no seu próprio jogo e valide ações no servidor.
 - O script pode não restaurar efeitos que sejam criados depois de sua inicialização.
