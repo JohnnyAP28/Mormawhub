@@ -817,6 +817,7 @@ stopFlight = function()
 end
 
 local bindTestRemote
+local boundTestRemote
 local modeRequestId = 0
 local modeRequestPending = false
 
@@ -852,8 +853,10 @@ testModeButton.Activated:Connect(function()
 end)
 
 bindTestRemote = function(remote)
-    if testRemote == remote then return end
+    -- testRemote pode já ter sido encontrado na inicialização; ainda precisamos conectar o listener.
+    if boundTestRemote == remote then return end
     testRemote = remote
+    boundTestRemote = remote
     remote.OnClientEvent:Connect(function(kind, value)
         if kind == "Status" then
             testStatus.Text = tostring(value)
