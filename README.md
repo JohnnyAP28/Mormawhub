@@ -1,108 +1,96 @@
-# MormawHub — GitHub Starter
+# MormawHub
 
-Projeto inicial do MormawHub com interface escura, identificação brasileira, minimização por ícone flutuante e controles locais de desempenho.
+Interface de desenvolvimento com tema escuro, painel arrastável, minimização, perfil gráfico, checklist de evento e ferramentas de teste autorizadas para uma experiência Roblox que você controla.
 
 ## Arquivos
 
-- `MormawHub.lua` — script principal.
-- `Loader.example.lua` — modelo do carregador remoto.
-- `README.md` — instruções de publicação e limitações.
+- `MormawHub.lua` — interface cliente. No Roblox Studio, use como `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
+- `MormawHubTestServer.server.lua` — endpoint server-side de teste. Coloque como `Script` em `ServerScriptService` da sua própria experiência.
+- `Loader.example.lua` — exemplo de loader; os marcadores precisam ser configurados antes de uso.
+- `README.md` — instalação, funções e limitações.
 
-## Publicar no GitHub
+## Instalação de teste recomendada
 
-1. Crie um repositório novo no GitHub, por exemplo `MormawHub`.
-2. Envie `MormawHub.lua` para a raiz do repositório.
-3. Abra o arquivo no GitHub e clique em **Raw**.
-4. Copie o endereço `raw.githubusercontent.com` gerado pelo GitHub.
-5. Atualize a URL no arquivo `Loader.example.lua` com seu usuário e repositório reais.
+1. Faça uma cópia de desenvolvimento da sua experiência no Roblox Studio.
+2. Coloque `MormawHub.lua` como um `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
+3. Coloque `MormawHubTestServer.server.lua` como um `Script` em `ServerScriptService`.
+4. Abra o script do servidor e configure `EXTRA_TESTER_USER_IDS` com os UserIds numéricos de testadores autorizados se a experiência for de grupo ou se outras contas precisarem testar. O dono de uma experiência pessoal é autorizado automaticamente.
+5. Teste com **Test > Start** no Studio ou em um servidor privado. O script do servidor bloqueia os comandos fora do Studio/servidor privado e para contas que não estejam autorizadas.
+6. Abra a aba **Testes**, ative o modo de teste e confira o texto de status para saber se o servidor autorizou a operação.
 
-O arquivo principal e as instruções podem ser atualizados diretamente no repositório. O loader de exemplo ainda usa um marcador e precisa ser ajustado antes de ser usado.
-
-## Carregador de exemplo
-
-Depois de publicar o arquivo e substituir os marcadores pelos dados reais:
+Exemplo de allowlist no script de servidor:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MormawHub/main/MormawHub.lua"))()
+local EXTRA_TESTER_USER_IDS = {
+    [123456789] = true, -- substitua pelo UserId real do seu testador
+}
 ```
 
-Esse formato exige um ambiente que permita `loadstring` e requisições HTTP. Para desenvolvimento oficial no Roblox Studio, prefira colocar o conteúdo como um `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
+Não deixe um UserId de exemplo sem substituir. Não instale o script de servidor em experiências de terceiros.
 
-## Atualização — checklist do Halloween
+## Funções atuais
 
-A interface agora tem quatro abas: **Início**, **Halloween**, **Gráficos** e **Ajustes**.
+### Interface e navegação
 
-- **Halloween:** checklist manual com nove etapas relacionadas ao evento, incluindo os quatro objetos da missão do Echo, Ghost Fisherman, Haunted Rod, Phantom Express/área Spectral e Candy Corn. Marque/desmarque cada etapa e acompanhe o progresso.
-- **Ajustes:** zerar o checklist e mostrar/ocultar a dica do evento.
-- **Gráficos:** mantém os controles anteriores de iluminação, sombras e efeitos locais.
-- **Início:** resumo das seções.
-- O painel continua arrastável, minimizável e fechável, com botão flutuante para reabrir.
+- Tema escuro e identificação MormawHub/Brasil.
+- Painel arrastável com mouse/toque.
+- Minimizar para um ícone flutuante e botão para reabrir.
+- Botão `×` para fechar.
+- **Ajustes > Tecla para minimizar:** toque no botão e pressione uma tecla do teclado. O padrão é `RightShift`. A escolha é local e vale enquanto a interface estiver aberta.
 
-**Limites:** o checklist é apenas um rastreador manual local; não confirma objetivos no jogo, não salva progresso entre execuções e não se sincroniza com a conta Roblox. As funções de farm automático, roubo automático, coleta automática, voo, teleporte e alteração de velocidade para obter vantagem em experiências de terceiros não foram adicionadas. Mecânicas de gameplay devem ser implementadas e testadas no próprio jogo do desenvolvedor, com validação no servidor.
+### Halloween / evento
 
-## Atualização — perfis gráficos e aba Player
+O vídeo mostra um aviso de florada de borboletas com instruções para pegar uma rede e capturar borboletas na Floresta Encantada. O checklist foi ajustado para refletir essas etapas visíveis:
 
-A aba **Gráficos** agora oferece estes perfis locais:
+- verificar o aviso de início da florada;
+- equipar a rede de captura;
+- ir à Floresta Encantada;
+- capturar borboletas durante a florada.
 
-- **ULTRA LEVE:** desativa sombras e pós-processamento e tenta desativar partículas, trilhas, beams, fogo, fumaça, brilhos e highlights visuais encontrados no cliente.
-- **BAIXO:** reduz iluminação e remove sombras/pós-processamento.
-- **MÉDIO:** perfil intermediário baseado na iluminação capturada no início.
-- **ALTO:** restaura os valores originais de iluminação e ativa pós-efeitos.
-- **REALISTA:** restaura a iluminação e os pós-efeitos capturados quando o script iniciou.
-- **Céu totalmente escuro:** remove temporariamente os objetos Sky encontrados em Lighting e escurece a iluminação local.
-- **Reduzir partículas e efeitos animados:** alterna a visibilidade local de efeitos compatíveis.
-- **Restaurar configurações guardadas:** tenta restaurar iluminação, céu, pós-efeitos e os efeitos visuais registrados.
+**Este checklist é manual.** Marcar uma linha não ativa o evento, não equipa a rede nem captura itens. Para implementar essas ações de verdade, é necessário integrar o código à lógica do jogo próprio (itens, missões e eventos do servidor). O vídeo sozinho não revela os nomes das funções internas, objetos ou RemoteEvents, então não seria correto inventá-los.
 
-A aba **Player** mostra o nome do jogador, se o personagem/Humanoid estão carregados, a vida e a velocidade atual, sem modificar os atributos de movimento.
+### Gráficos
 
-### Limites técnicos
+- **ULTRA LEVE:** reduz sombras, pós-efeitos e tenta ocultar efeitos visuais compatíveis encontrados no cliente.
+- **BAIXO:** iluminação simplificada.
+- **MÉDIO:** perfil intermediário.
+- **ALTO / REALISTA:** restaura valores de iluminação capturados na inicialização.
+- **Céu totalmente escuro:** escurece a iluminação local e remove temporariamente objetos `Sky` encontrados em `Lighting`.
+- **Reduzir partículas e efeitos animados:** alterna efeitos locais compatíveis.
+- **Restaurar configurações guardadas:** tenta restaurar iluminação e efeitos registrados.
 
-Essas opções alteram propriedades locais que o cliente consegue acessar; elas não mudam a qualidade gráfica global configurada pelo menu do Roblox, não garantem FPS específico e não conseguem remover universalmente todas as animações, skins, ovos, eventos ou efeitos controlados pelo servidor. Alguns efeitos podem reaparecer ou não ser alteráveis no cliente. O modo de céu escuro pode dificultar a visibilidade. O perfil “realista” restaura valores capturados, mas não força o motor gráfico para a qualidade máxima. Para um jogo próprio, a redução de animações e efeitos deve ser implementada no código da experiência, com suporte explícito a configurações de desempenho.
+Os perfis não alteram o controle global de qualidade gráfica do Roblox e não garantem uma quantidade específica de FPS. Efeitos criados depois da inicialização podem exigir nova captura.
 
-## O que funciona nesta versão
+### Player
 
-- Interface com nome MormawHub e bandeira brasileira.
-- Minimizar esconde a janela e deixa apenas o botão flutuante; tocar nele reabre.
-- Botão `×` fecha a interface.
-- Painel arrastável por mouse/toque.
-- Perfis gráficos locais: ultra leve, baixo, médio, alto e restauração da iluminação original; modo de céu escuro e alternância de efeitos visuais compatíveis.
-- Opção de restaurar valores de iluminação capturados quando o script iniciou.
+Mostra nome, estado do personagem, Humanoid, vida e velocidade atual. Não aplica mudanças de movimento por conta própria.
 
-## Limitações importantes
+### Testes e métricas
 
-- As configurações de iluminação/efeitos não controlam todos os gráficos internos do Roblox nem garantem aumento específico de FPS.
-- Não existe um limitador ou desbloqueador de FPS real nesta versão; o script não consegue forçar o FPS além dos controles suportados pelo cliente Roblox.
-- As ações de farm, roubo, coleta e teleporte não estão implementadas. Não use este projeto para automatizar ou interferir em jogos de terceiros. Para essas mecânicas, implemente a lógica no seu próprio jogo e valide ações no servidor.
-- O script pode não restaurar efeitos que sejam criados depois de sua inicialização.
+- **FPS aproximado:** amostra de quadros por segundo do cliente.
+- **Memória:** tenta ler o consumo de memória informado pelo Roblox.
+- **Ping:** tenta ler a métrica de rede exposta pelo cliente; pode ficar indisponível.
+- **Velocidade:** barra contínua de **0 a 100**, com atualização do valor selecionado.
+- **Teleporte:** permite percorrer os destinos permitidos encontrados no mapa. O servidor valida o destino selecionado e executa o teleporte.
+- **Voo experimental:** controle local de teste; depende da simulação e pode não funcionar em todas as configurações de personagem.
+- **Animações:** tenta parar as tracks em execução no Animator do personagem local.
 
-## Atualização — testes controlados e métricas
+A velocidade e o teleporte usam `MormawHubTestRemote`, criado pelo script de servidor. O servidor valida ambiente, autorização, modo de teste, intervalo de velocidade (0–100) e destino. Para teleporte, adicione `SpawnLocation` ao mapa ou uma peça chamada `TestSpawn` ou `MormawTestSpawn`. O destino é selecionado na aba Testes antes de teleportar.
 
-A aba **Testes** adiciona ferramentas para diagnóstico no projeto próprio:
+### Teste de desempenho repetível
 
-- **FPS aproximado:** amostra de quadros por segundo no cliente, atualizada por intervalos de aproximadamente um segundo.
-- **Memória:** tenta consultar o consumo total de memória reportado pelo Roblox.
-- **Ping:** tenta ler a métrica de rede disponível no cliente; a API pode não expor o valor em todos os contextos.
-- **WalkSpeed de teste:** permite testar valores 16, 24, 32 e 48 depois de ativar explicitamente o modo de teste.
-- **Voo de teste:** movimento local experimental com WASD, Espaço e Ctrl; requer teclado e pode ser corrigido pela simulação/servidor.
-- **Teleporte de teste:** procura o primeiro objeto `SpawnLocation` do mapa e move o personagem localmente para perto dele.
-- **Animações:** permite parar as tracks que estiverem tocando no Animator do próprio personagem durante o teste.
+1. Anote FPS, memória e ping antes das alterações.
+2. Mantenha mapa, câmera e quantidade de jogadores iguais.
+3. Teste cada perfil gráfico por um intervalo semelhante.
+4. Compare as medições; use o MicroProfiler e o Developer Console do Roblox Studio para uma análise mais precisa.
+5. Para teste de movimento, confirme o resultado no servidor, não apenas na interface do cliente.
 
-### Como testar no Roblox Studio
+## Limitações
 
-1. Use uma cópia de desenvolvimento da sua experiência e inicie **Test** com um cliente e servidor.
-2. Coloque o script como `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
-3. Abra **Testes** e registre FPS, memória e ping em uma situação-base.
-4. Repita a mesma sequência com cada perfil gráfico, mantendo mapa, câmera e número de jogadores iguais.
-5. Teste movimento e animações apenas no servidor de desenvolvimento. Confirme no servidor o estado esperado e verifique o Output por erros.
-6. Desative o modo de teste e feche o painel ao terminar.
-
-### Interpretação e limites
-
-- FPS é uma estimativa calculada no cliente, não uma métrica de servidor. Para análise precisa, use Roblox Studio MicroProfiler e Developer Console, comparando cliente e servidor.
-- Memória e ping dependem das métricas que o cliente disponibiliza; podem aparecer como indisponíveis.
-- Os controles de velocidade, voo e teleporte são **experimentos locais**, não um sistema de autorização nem testes de segurança do servidor. Eles não provam que o servidor aceitou a mudança.
-- Para validar mecânicas corretamente, adicione comandos de teste no código do seu próprio jogo, protegidos por uma allowlist de UserIds de desenvolvedores/testadores, validação server-side e execução apenas em servidor de teste. Não use os controles para obter vantagens em experiências de terceiros.
-- O botão de parar animações atua nas tracks do Animator do personagem local; animações iniciadas novamente pelo jogo podem voltar.
-- As medições e os estados de checklist não são persistidos e não são enviados a serviços externos.
-
-O código original de interface, checklist de Halloween, perfis gráficos e aba Player foi mantido; a nova aba **Testes** foi adicionada separadamente.
+- O código da interface não contém a implementação interna do evento de borboletas; apenas o projeto da experiência pode fornecer a integração correta.
+- O checklist não salva progresso nem sincroniza com a conta.
+- FPS, memória e ping são métricas aproximadas e dependem do que o cliente expõe.
+- O voo e a parada de animações são controles locais de teste; o jogo pode reiniciar animações ou corrigir movimento.
+- A barra de velocidade e o teleporte dependem da instalação do script server-side e de uma conta autorizada.
+- Não há promessa de FPS fixo, desbloqueio de FPS ou remoção universal de efeitos.
+- Use os scripts de teste somente em uma experiência que você controla/autorizou.
