@@ -281,10 +281,6 @@ addButton("Restaurar movimento padrão", function()
     movementRequest("WalkSpeed", 16)
     movementRequest("JumpPower", 50)
 end)
-addButton("Ocultar / mostrar painel", function()
-    main.Visible = not main.Visible
-end)
-
 -- Floating reopen button remains available when the panel is minimized/hidden.
 local reopen = make("TextButton", {
     Name = "MormawHubReopen",
