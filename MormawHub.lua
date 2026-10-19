@@ -22,6 +22,8 @@ local function trackConnection(connection)
     return connection
 end
 local restoreLocalSettings
+local clearPlayerInfoConnections
+local stopFlight
 
 -- Evita duplicar a interface ao executar novamente.
 local previous = playerGui:FindFirstChild("MormawHubGui")
@@ -82,7 +84,9 @@ gui.DisplayOrder = 999
 gui.Parent = playerGui
 
 gui.Destroying:Connect(function()
+    if stopFlight then pcall(stopFlight) end
     if restoreLocalSettings then pcall(restoreLocalSettings) end
+    if clearPlayerInfoConnections then pcall(clearPlayerInfoConnections) end
     for _, connection in ipairs(externalConnections) do
         pcall(function() connection:Disconnect() end)
     end
@@ -431,7 +435,7 @@ testsDisclaimer.LayoutOrder = 11
 testsDisclaimer.TextYAlignment = Enum.TextYAlignment.Top
 
 local playerInfoConnections = {}
-local function clearPlayerInfoConnections()
+clearPlayerInfoConnections = function()
     for _, connection in ipairs(playerInfoConnections) do connection:Disconnect() end
     table.clear(playerInfoConnections)
 end
@@ -786,11 +790,11 @@ local function getTestHumanoid()
     return character and character:FindFirstChildOfClass("Humanoid"), character
 end
 
-local function stopFlight()
+stopFlight = function()
     flyEnabled = false
     if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
     if flyVelocity then flyVelocity:Destroy(); flyVelocity = nil end
-    flyButton.Text = "Ativar voo de teste"
+    if flyButton and flyButton.Parent then flyButton.Text = "Ativar voo de teste" end
 end
 
 testModeButton.Activated:Connect(function()
