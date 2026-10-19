@@ -816,25 +816,50 @@ stopFlight = function()
     if flyDownButton and flyDownButton.Parent then flyDownButton.Visible = false end
 end
 
+local bindTestRemote
+local modeRequestId = 0
+local modeRequestPending = false
+
 local function showRemoteMissing(actionName)
-    testStatus.Text = actionName .. " precisa do servidor de teste, mas MormawHubTestRemote não foi encontrado. O arquivo MormawHubTestServer.server.lua precisa estar como Script em ServerScriptService na experiência; depois reinicie o servidor. Voo, Aim e parar animações são controles locais e podem ser testados separadamente."
+    testStatus.Text = actionName .. " precisa do servidor de teste, mas MormawHubTestRemote não foi encontrado. O arquivo MormawHubTestServer.server.lua precisa estar como Script em ServerScriptService na experiência; depois reinicie o servidor. Voo, Aim e parar animações são controles locais e não exigem autorização remota."
 end
 
 testModeButton.Activated:Connect(function()
+    -- Tenta localizar o Remote novamente ao tocar, caso ele tenha sido criado depois da interface.
+    if not testRemote then
+        local found = ReplicatedStorage:FindFirstChild("MormawHubTestRemote")
+        if found and found:IsA("RemoteEvent") and bindTestRemote then
+            bindTestRemote(found)
+        end
+    end
     if not testRemote then
         showRemoteMissing("Modo de teste / Speed / Teleport")
         return
     end
+    modeRequestId += 1
+    local thisRequest = modeRequestId
+    modeRequestPending = true
     testModeButton.Text = "SOLICITANDO AUTORIZAÇÃO..."
+    testStatus.Text = "Pedido enviado ao servidor; aguardando resposta de autorização..."
     testRemote:FireServer("SetTestMode", not testModeEnabled)
+    task.delay(5, function()
+        if modeRequestPending and modeRequestId == thisRequest then
+            modeRequestPending = false
+            testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
+            testStatus.Text = "O servidor não respondeu em 5 segundos. Confira se MormawHubTestServer.server.lua está ativo em ServerScriptService e se esta experiência/conta tem autorização. Não foi marcado como sucesso."
+        end
+    end)
 end)
 
-local function bindTestRemote(remote)
+bindTestRemote = function(remote)
+    if testRemote == remote then return end
     testRemote = remote
     remote.OnClientEvent:Connect(function(kind, value)
         if kind == "Status" then
             testStatus.Text = tostring(value)
         elseif kind == "TestMode" then
+            modeRequestPending = false
+            modeRequestId += 1
             testModeEnabled = value == true
             testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
             if testModeEnabled and setTestSpeed then setTestSpeed(selectedSpeed, true) end
