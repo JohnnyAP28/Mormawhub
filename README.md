@@ -75,11 +75,11 @@ Mostra nome, estado do personagem, Humanoid, vida, velocidade e disponibilidade 
 - **Ping:** tenta ler a métrica de rede exposta pelo cliente; pode ficar indisponível.
 - **Velocidade:** barra contínua de **0 a 100**, com atualização do valor selecionado. O valor escolhido antes da autorização é aplicado quando o servidor confirma o modo de teste.
 - **Teleporte:** permite percorrer os destinos permitidos encontrados no mapa. O servidor valida o destino selecionado e executa o teleporte.
-- **Voo experimental:** controle local de teste; o analógico/controles de movimento cuidam do deslocamento horizontal, e botões de toque permitem subir/descer no celular. No teclado, use Espaço/Ctrl.
-- **Aim de teste:** mira apenas NPCs da própria experiência que o desenvolvedor marcar com a tag `MormawAimTarget`; exige modo de teste autorizado, tem alcance de 250 studs e não mira outros jogadores.
+- **Voo experimental:** controle local; o analógico/controles de movimento cuidam do deslocamento horizontal, e botões de toque permitem subir/descer no celular. No teclado, use Espaço/Ctrl. Pode ser corrigido pelo servidor do jogo.
+- **Aim de teste:** mira apenas NPCs da própria experiência que o desenvolvedor marcar com a tag `MormawAimTarget`, tem alcance de 250 studs e não mira outros jogadores. É controle local de câmera.
 - **Animações:** tenta parar as tracks em execução no Animator do personagem local.
 
-A velocidade e o teleporte usam `MormawHubTestRemote`, criado pelo script de servidor. O aim de teste atua somente em NPCs marcados com `MormawAimTarget` na experiência autorizada. O servidor valida ambiente, autorização, modo de teste, intervalo de velocidade (0–100) e destino. Para teleporte, adicione `SpawnLocation` ao mapa ou uma peça chamada `TestSpawn` ou `MormawTestSpawn`. O destino é selecionado na aba Testes antes de teleportar.
+**Se aparecer “MormawHubTestRemote não foi encontrado”:** o script `MormawHubTestServer.server.lua` não está rodando em `ServerScriptService` da experiência atual, ou o servidor ainda não reiniciou. A interface agora informa esse problema de forma centralizada para Modo de Teste, Speed e Teleport. Voo, Aim e parar animações podem ser testados localmente sem esse Remote; Speed autoritativo e Teleport precisam dele. O servidor valida ambiente, autorização, modo de teste, intervalo de velocidade (0–100) e destino. Por segurança, só autoriza no Studio ou em servidor privado e para o dono de uma experiência pessoal ou UserIds autorizados. Para teleporte, adicione `SpawnLocation` ao mapa ou uma peça chamada `TestSpawn` ou `MormawTestSpawn`.
 
 ### Teste de desempenho repetível
 
