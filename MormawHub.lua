@@ -11,6 +11,7 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -202,15 +203,10 @@ restore.Size = UDim2.new(1, 0, 0, 32)
 -- Rastreador manual do evento: não lê nem altera o estado do jogo.
 local trackerState = {}
 local trackerItems = {
-    "Echo: encontrar o colar",
-    "Echo: encontrar o osso",
-    "Echo: encontrar o ursinho",
-    "Echo: encontrar a foto fantasma",
-    "Falar com o Ghost Fisherman",
-    "Conseguir a Haunted Rod",
-    "Pescar e obter o ticket do Phantom Express",
-    "Visitar o Phantom Express / área Spectral",
-    "Coletar Candy Corn durante o evento",
+    "Verificar o aviso de início da florada de borboletas",
+    "Equipar a rede de captura",
+    "Ir à Floresta Encantada",
+    "Capturar borboletas durante a florada",
 }
 for _, item in ipairs(trackerItems) do trackerState[item] = false end
 
@@ -237,7 +233,7 @@ trackerPadding.PaddingRight = UDim.new(0, 5)
 trackerPadding.PaddingBottom = UDim.new(0, 5)
 trackerPadding.Parent = halloweenFrame
 
-local trackerProgress = label(halloweenFrame, "Progresso do evento: 0/9", UDim2.new(1, -6, 0, 28), UDim2.new(), 13, Color3.fromRGB(125, 220, 157))
+local trackerProgress = label(halloweenFrame, "Checklist da florada: 0/4", UDim2.new(1, -6, 0, 28), UDim2.new(), 13, Color3.fromRGB(125, 220, 157))
 trackerProgress.LayoutOrder = 1
 
 local trackerButtons = {}
@@ -266,7 +262,7 @@ for index, item in ipairs(trackerItems) do
 end
 
 local trackerTips = label(halloweenFrame,
-    "Dica: o checklist é manual e vale apenas enquanto esta interface estiver aberta. Os nomes e etapas podem mudar com atualizações.",
+    "Checklist baseado no aviso visível no vídeo. Ele não ativa o evento nem captura itens automaticamente; para isso, é necessário integrar a lógica real da sua experiência.",
     UDim2.new(1, -6, 0, 46), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
 trackerTips.LayoutOrder = #trackerItems + 2
 trackerTips.TextYAlignment = Enum.TextYAlignment.Top
@@ -324,29 +320,60 @@ local testModeEnabled = false
 local flyEnabled = false
 local flyVelocity
 local flyConnection
-local testStatus = label(testsFrame, "Modo de teste desligado. Ative para habilitar os controles locais abaixo.", UDim2.new(1, -6, 0, 40), UDim2.new(), 11, Color3.fromRGB(220, 190, 110))
+local testRemote = ReplicatedStorage:FindFirstChild("MormawHubTestRemote")
+local selectedSpawnIndex = 1
+local spawnTargets = {}
+local testStatus = label(testsFrame, "MODO DE TESTE DESLIGADO. Instale o script de servidor do repositório para validar velocidade e teleporte.", UDim2.new(1, -6, 0, 48), UDim2.new(), 11, Color3.fromRGB(220, 190, 110))
 testStatus.LayoutOrder = 2
 testStatus.TextYAlignment = Enum.TextYAlignment.Top
 
 local testModeButton = button(testsFrame, "ATIVAR MODO DE TESTE", UDim2.new(1, -6, 0, 36), UDim2.new())
 testModeButton.LayoutOrder = 3
-local speed16 = button(testsFrame, "Velocidade 16 (padrão)", UDim2.new(1, -6, 0, 34), UDim2.new())
-speed16.LayoutOrder = 4
-local speed24 = button(testsFrame, "Velocidade 24", UDim2.new(1, -6, 0, 34), UDim2.new())
-speed24.LayoutOrder = 5
-local speed32 = button(testsFrame, "Velocidade 32", UDim2.new(1, -6, 0, 34), UDim2.new())
-speed32.LayoutOrder = 6
-local speed48 = button(testsFrame, "Velocidade 48", UDim2.new(1, -6, 0, 34), UDim2.new())
-speed48.LayoutOrder = 7
+
+local speedValueLabel = label(testsFrame, "Velocidade de teste: 16 / 100", UDim2.new(1, -6, 0, 24), UDim2.new(), 12, Color3.fromRGB(230, 232, 240))
+speedValueLabel.LayoutOrder = 4
+local speedTrack = Instance.new("TextButton")
+speedTrack.Name = "SpeedSliderTrack"
+speedTrack.Size = UDim2.new(1, -14, 0, 14)
+speedTrack.Position = UDim2.new(0, 4, 0, 0)
+speedTrack.BackgroundColor3 = Color3.fromRGB(48, 52, 66)
+speedTrack.BorderSizePixel = 0
+speedTrack.Text = ""
+speedTrack.AutoButtonColor = false
+speedTrack.LayoutOrder = 5
+speedTrack.Parent = testsFrame
+corner(speedTrack, 7)
+local speedFill = Instance.new("Frame")
+speedFill.Name = "Fill"
+speedFill.Size = UDim2.new(0.16, 0, 1, 0)
+speedFill.BackgroundColor3 = Color3.fromRGB(55, 180, 105)
+speedFill.BorderSizePixel = 0
+speedFill.Parent = speedTrack
+corner(speedFill, 7)
+local speedKnob = Instance.new("Frame")
+speedKnob.Name = "Knob"
+speedKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+speedKnob.Position = UDim2.new(0.16, 0, 0.5, 0)
+speedKnob.Size = UDim2.fromOffset(18, 18)
+speedKnob.BackgroundColor3 = Color3.fromRGB(240, 244, 248)
+speedKnob.BorderSizePixel = 0
+speedKnob.ZIndex = 3
+speedKnob.Parent = speedTrack
+corner(speedKnob, 9)
+local speedHint = label(testsFrame, "Arraste a barra para escolher qualquer valor entre 0 e 100.", UDim2.new(1, -6, 0, 24), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
+speedHint.LayoutOrder = 6
+
 local flyButton = button(testsFrame, "Ativar voo de teste", UDim2.new(1, -6, 0, 34), UDim2.new())
-flyButton.LayoutOrder = 8
-local spawnButton = button(testsFrame, "Teletransportar ao Spawn de teste", UDim2.new(1, -6, 0, 34), UDim2.new())
+flyButton.LayoutOrder = 7
+local spawnTargetButton = button(testsFrame, "Destino: procurando SpawnLocation...", UDim2.new(1, -6, 0, 34), UDim2.new())
+spawnTargetButton.LayoutOrder = 8
+local spawnButton = button(testsFrame, "Teleportar para destino selecionado", UDim2.new(1, -6, 0, 34), UDim2.new())
 spawnButton.LayoutOrder = 9
 local stopAnimations = button(testsFrame, "Parar animações atuais do meu personagem", UDim2.new(1, -6, 0, 34), UDim2.new())
 stopAnimations.LayoutOrder = 10
 local testsDisclaimer = label(testsFrame,
-    "Teste local: velocidade/voo/teleporte podem ser sobrescritos pelo servidor. Parar animações afeta apenas as tracks do seu próprio personagem. Para testes de rede reais, implemente endpoints de teste no servidor do seu jogo.",
-    UDim2.new(1, -6, 0, 72), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
+    "Velocidade e teleporte usam o script de servidor autorizado deste repositório. Ative o modo de teste somente no seu ambiente. Voo é experimental/local; parar animações afeta apenas tracks do seu personagem.",
+    UDim2.new(1, -6, 0, 60), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
 testsDisclaimer.LayoutOrder = 11
 testsDisclaimer.TextYAlignment = Enum.TextYAlignment.Top
 
@@ -366,13 +393,22 @@ player.CharacterAdded:Connect(function()
     task.defer(refreshPlayerInfo)
 end)
 
-local resetTracker = button(settingsFrame, "Zerar checklist do Halloween", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 0))
+local resetTracker = button(settingsFrame, "Zerar checklist da florada", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 0))
 local toggleTips = button(settingsFrame, "Ocultar dicas do evento", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 48))
 local tipsVisible = true
+local toggleKeyCode = Enum.KeyCode.RightShift
+local waitingForKey = false
+local keybindButton = button(settingsFrame, "Tecla para minimizar: RightShift", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 96))
 local settingsInfo = label(settingsFrame,
-    "Preferências locais. O checklist não é enviado ao Roblox nem sincronizado entre sessões.",
-    UDim2.new(1, 0, 0, 62), UDim2.fromOffset(0, 100), 11, Color3.fromRGB(155, 161, 178))
+    "Toque no botão da tecla e pressione qualquer tecla do teclado. O checklist e a tecla escolhida ficam apenas nesta execução.",
+    UDim2.new(1, 0, 0, 62), UDim2.fromOffset(0, 144), 11, Color3.fromRGB(155, 161, 178))
 settingsInfo.TextYAlignment = Enum.TextYAlignment.Top
+
+keybindButton.Activated:Connect(function()
+    waitingForKey = true
+    keybindButton.Text = "Pressione a tecla desejada..."
+    settingsInfo.Text = "Aguardando tecla. Pressione uma tecla do teclado para minimizar/reabrir o painel."
+end)
 
 local function showPage(page)
     local isHome = page == "home"
@@ -396,7 +432,7 @@ local function showPage(page)
     restore.Visible = isPerformance
 
     if isHome then
-        status.Text = "MormawHub está ativo.\nHalloween: checklist manual.\nGráficos: perfis locais para priorizar FPS."
+        status.Text = "MormawHub está ativo.\nHalloween: checklist manual da florada de borboletas.\nGráficos: perfis locais para priorizar FPS."
     elseif isPerformance then
         status.Text = "Perfis locais de imagem. A qualidade final também depende das configurações do Roblox."
     elseif isPlayer then
@@ -641,33 +677,101 @@ local function stopFlight()
 end
 
 testModeButton.Activated:Connect(function()
-    testModeEnabled = not testModeEnabled
-    testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
-    testStatus.Text = testModeEnabled and "Modo de teste ATIVO: os controles locais estão liberados." or "Modo de teste desligado."
+    if not testRemote then
+        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua em ServerScriptService e use uma conta autorizada."
+        return
+    end
+    testModeButton.Text = "SOLICITANDO AUTORIZAÇÃO..."
+    testRemote:FireServer("SetTestMode", not testModeEnabled)
+end)
+
+if testRemote then
+    testRemote.OnClientEvent:Connect(function(kind, value)
+        if kind == "Status" then
+            testStatus.Text = tostring(value)
+        elseif kind == "TestMode" then
+            testModeEnabled = value == true
+            testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
+            if not testModeEnabled then
+                stopFlight()
+            end
+        end
+    end)
+end
+
+local function setTestSpeed(value)
+    value = math.clamp(math.floor(tonumber(value) or 16), 0, 100)
+    speedValueLabel.Text = "Velocidade de teste: " .. value .. " / 100"
+    speedFill.Size = UDim2.new(value / 100, 0, 1, 0)
+    speedKnob.Position = UDim2.new(value / 100, 0, 0.5, 0)
     if not testModeEnabled then
-        stopFlight()
-        local humanoid = getTestHumanoid()
-        if humanoid then humanoid.WalkSpeed = 16 end
+        testStatus.Text = "Ative o MODO DE TESTE antes de aplicar a velocidade."
+        return
+    end
+    if not testRemote then
+        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua no ServerScriptService."
+        return
+    end
+    testRemote:FireServer("SetSpeed", value)
+end
+
+local function setSliderFromX(x)
+    local width = math.max(speedTrack.AbsoluteSize.X, 1)
+    local alpha = math.clamp((x - speedTrack.AbsolutePosition.X) / width, 0, 1)
+    setTestSpeed(math.floor(alpha * 100 + 0.5))
+end
+local sliderDragging = false
+speedTrack.Activated:Connect(function() setSliderFromX(UserInputService:GetMouseLocation().X) end)
+speedTrack.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
+        setSliderFromX(input.Position.X)
+    end
+end)
+speedKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
+        setSliderFromX(input.Position.X)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        setSliderFromX(input.Position.X)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = false
     end
 end)
 
-local function setTestSpeed(value)
-    if not testModeEnabled then
-        testStatus.Text = "Ative o MODO DE TESTE antes de alterar a velocidade."
-        return
+local function refreshSpawnTargets()
+    spawnTargets = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("SpawnLocation") or (obj:IsA("BasePart") and (obj.Name == "MormawTestSpawn" or obj.Name == "TestSpawn")) then
+            table.insert(spawnTargets, obj)
+        end
     end
-    local humanoid = getTestHumanoid()
-    if not humanoid then
-        testStatus.Text = "Não encontrei o Humanoid. Aguarde o personagem carregar."
-        return
+    table.sort(spawnTargets, function(a, b) return a:GetFullName() < b:GetFullName() end)
+    if #spawnTargets == 0 then
+        selectedSpawnIndex = 1
+        spawnTargetButton.Text = "Destino: nenhum SpawnLocation de teste"
+    else
+        selectedSpawnIndex = math.clamp(selectedSpawnIndex, 1, #spawnTargets)
+        local obj = spawnTargets[selectedSpawnIndex]
+        spawnTargetButton.Text = "Destino: " .. obj:GetFullName()
     end
-    humanoid.WalkSpeed = value
-    testStatus.Text = "WalkSpeed local definido para " .. value .. ". O servidor pode sobrescrever esse valor."
 end
-speed16.Activated:Connect(function() setTestSpeed(16) end)
-speed24.Activated:Connect(function() setTestSpeed(24) end)
-speed32.Activated:Connect(function() setTestSpeed(32) end)
-speed48.Activated:Connect(function() setTestSpeed(48) end)
+refreshSpawnTargets()
+spawnTargetButton.Activated:Connect(function()
+    refreshSpawnTargets()
+    if #spawnTargets == 0 then
+        testStatus.Text = "Adicione um SpawnLocation ou uma peça chamada TestSpawn/MormawTestSpawn ao mapa."
+        return
+    end
+    selectedSpawnIndex = selectedSpawnIndex % #spawnTargets + 1
+    spawnTargetButton.Text = "Destino: " .. spawnTargets[selectedSpawnIndex]:GetFullName()
+end)
 
 flyButton.Activated:Connect(function()
     if not testModeEnabled then
@@ -709,22 +813,17 @@ spawnButton.Activated:Connect(function()
         testStatus.Text = "Ative o MODO DE TESTE antes de usar o teleporte."
         return
     end
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if not root then
-        testStatus.Text = "Personagem ainda não está pronto."
+    if not testRemote then
+        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua no servidor."
         return
     end
-    local spawnPart
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("SpawnLocation") then spawnPart = obj; break end
-    end
-    if not spawnPart then
-        testStatus.Text = "Nenhum SpawnLocation encontrado no mapa."
+    refreshSpawnTargets()
+    local target = spawnTargets[selectedSpawnIndex]
+    if not target then
+        testStatus.Text = "Nenhum destino válido. Adicione SpawnLocation ou peça TestSpawn/MormawTestSpawn."
         return
     end
-    root.CFrame = spawnPart.CFrame + Vector3.new(0, 5, 0)
-    testStatus.Text = "Teleport local para o SpawnLocation de teste solicitado. O servidor pode corrigir a posição."
+    testRemote:FireServer("TeleportToSpawn", target:GetFullName())
 end)
 
 stopAnimations.Activated:Connect(function()
@@ -772,6 +871,22 @@ close.Activated:Connect(function()
     stopFlight()
     if metricsConnection then metricsConnection:Disconnect() end
     gui:Destroy()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if waitingForKey then
+        if input.KeyCode ~= Enum.KeyCode.Unknown then
+            toggleKeyCode = input.KeyCode
+            waitingForKey = false
+            keybindButton.Text = "Tecla para minimizar: " .. toggleKeyCode.Name
+            settingsInfo.Text = "Tecla definida. Pressione " .. toggleKeyCode.Name .. " para minimizar/reabrir o painel."
+        end
+        return
+    end
+    if input.KeyCode == toggleKeyCode then
+        panel.Visible = not panel.Visible
+        reopen.Visible = not panel.Visible
+    end
 end)
 
 -- Arrastar painel pelo cabeçalho (mouse ou toque).
