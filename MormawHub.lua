@@ -24,14 +24,44 @@ local original = {
     Brightness = Lighting.Brightness,
     FogEnd = Lighting.FogEnd,
     Technology = Lighting.Technology,
+    ClockTime = Lighting.ClockTime,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    FogColor = Lighting.FogColor,
+    ColorShift_Top = Lighting.ColorShift_Top,
+    ColorShift_Bottom = Lighting.ColorShift_Bottom,
+    ExposureCompensation = Lighting.ExposureCompensation,
 }
 
 local effectsSnapshot = {}
+local visualEffectsSnapshot = {}
+local originalSkies = {}
 for _, obj in ipairs(Lighting:GetChildren()) do
     if obj:IsA("PostEffect") then
         effectsSnapshot[obj] = obj.Enabled
+    elseif obj:IsA("Sky") then
+        table.insert(originalSkies, obj)
     end
 end
+
+local function isReducibleVisual(obj)
+    return obj:IsA("ParticleEmitter")
+        or obj:IsA("Trail")
+        or obj:IsA("Beam")
+        or obj:IsA("Fire")
+        or obj:IsA("Smoke")
+        or obj:IsA("Sparkles")
+        or obj:IsA("Highlight")
+end
+
+local function captureVisualEffects()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if isReducibleVisual(obj) and visualEffectsSnapshot[obj] == nil then
+            visualEffectsSnapshot[obj] = obj.Enabled
+        end
+    end
+end
+captureVisualEffects()
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "MormawHubGui"
@@ -90,7 +120,7 @@ local panel = Instance.new("Frame")
 panel.Name = "MainPanel"
 panel.AnchorPoint = Vector2.new(0.5, 0.5)
 panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.Size = UDim2.fromOffset(390, 410)
+panel.Size = UDim2.fromOffset(420, 510)
 panel.BackgroundColor3 = Color3.fromRGB(13, 15, 21)
 panel.BorderSizePixel = 0
 panel.Parent = gui
@@ -99,7 +129,7 @@ stroke(panel, Color3.fromRGB(50, 55, 69), 0.1)
 
 local sizeLimit = Instance.new("UISizeConstraint")
 sizeLimit.MinSize = Vector2.new(300, 300)
-sizeLimit.MaxSize = Vector2.new(460, 520)
+sizeLimit.MaxSize = Vector2.new(460, 600)
 sizeLimit.Parent = panel
 
 local header = Instance.new("Frame")
@@ -127,10 +157,11 @@ tabs.Position = UDim2.fromOffset(14, 78)
 tabs.Size = UDim2.new(1, -28, 0, 34)
 tabs.Parent = panel
 
-local homeTab = button(tabs, "Início", UDim2.new(0.25, -5, 1, 0), UDim2.fromOffset(0, 0))
-local halloweenTab = button(tabs, "Halloween", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.25, 2, 0, 0))
-local performanceTab = button(tabs, "Gráficos", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.50, 4, 0, 0))
-local settingsTab = button(tabs, "Ajustes", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.75, 6, 0, 0))
+local homeTab = button(tabs, "Início", UDim2.new(0.2, -5, 1, 0), UDim2.fromOffset(0, 0))
+local halloweenTab = button(tabs, "Halloween", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.2, 1, 0, 0))
+local performanceTab = button(tabs, "Gráficos", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.4, 2, 0, 0))
+local playerTab = button(tabs, "Player", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.6, 3, 0, 0))
+local settingsTab = button(tabs, "Ajustes", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.8, 4, 0, 0))
 
 local content = Instance.new("Frame")
 content.BackgroundTransparency = 1
@@ -148,10 +179,22 @@ local function makeAction(text, y)
     return b
 end
 
-local lowGraphics = makeAction("Ativar gráficos baixos", 50)
-local shadows = makeAction("Desativar sombras globais", 96)
-local effects = makeAction("Desativar efeitos pós-processamento", 142)
-local restore = makeAction("Restaurar configurações guardadas", 188)
+local lowGraphics = makeAction("ULTRA LEVE — mínimo visual", 38)
+local shadows = makeAction("BAIXO — desempenho", 76)
+local effects = makeAction("MÉDIO — equilibrado", 114)
+local highGraphics = makeAction("ALTO — qualidade visual", 152)
+local realisticGraphics = makeAction("REALISTA — iluminação original", 190)
+local blackSky = makeAction("Ativar céu totalmente escuro", 228)
+local visualCleanup = makeAction("Reduzir partículas e efeitos animados", 266)
+local restore = makeAction("Restaurar configurações guardadas", 304)
+lowGraphics.Size = UDim2.new(1, 0, 0, 32)
+shadows.Size = UDim2.new(1, 0, 0, 32)
+effects.Size = UDim2.new(1, 0, 0, 32)
+highGraphics.Size = UDim2.new(1, 0, 0, 32)
+realisticGraphics.Size = UDim2.new(1, 0, 0, 32)
+blackSky.Size = UDim2.new(1, 0, 0, 32)
+visualCleanup.Size = UDim2.new(1, 0, 0, 32)
+restore.Size = UDim2.new(1, 0, 0, 32)
 
 -- Rastreador manual do evento: não lê nem altera o estado do jogo.
 local trackerState = {}
@@ -233,6 +276,38 @@ settingsFrame.Size = UDim2.new(1, 0, 1, 0)
 settingsFrame.Visible = false
 settingsFrame.Parent = content
 
+local playerFrame = Instance.new("Frame")
+playerFrame.Name = "PlayerPage"
+playerFrame.BackgroundTransparency = 1
+playerFrame.Position = UDim2.fromOffset(0, 0)
+playerFrame.Size = UDim2.new(1, 0, 1, 0)
+playerFrame.Visible = false
+playerFrame.Parent = content
+
+local playerInfo = label(playerFrame, "Carregando informações do personagem...", UDim2.new(1, 0, 0, 100), UDim2.fromOffset(0, 0), 12)
+playerInfo.TextYAlignment = Enum.TextYAlignment.Top
+local refreshPlayer = button(playerFrame, "Atualizar status do personagem", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 108))
+local playerNotice = label(playerFrame,
+    "Velocidade, voo e movimento são controlados pelas regras da experiência. Esta aba não altera vantagens de gameplay.",
+    UDim2.new(1, 0, 0, 84), UDim2.fromOffset(0, 158), 11, Color3.fromRGB(155, 161, 178))
+playerNotice.TextYAlignment = Enum.TextYAlignment.Top
+
+local function refreshPlayerInfo()
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    playerInfo.Text = "Jogador: " .. player.DisplayName .. " (@" .. player.Name .. ")\n"
+        .. "Personagem: " .. (character and "carregado" or "não carregado") .. "\n"
+        .. "Humanoid: " .. (humanoid and "disponível" or "indisponível") .. "\n"
+        .. "Vida: " .. (humanoid and (math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth)) or "—") .. "\n"
+        .. "Velocidade atual: " .. (humanoid and tostring(humanoid.WalkSpeed) or "—")
+end
+
+refreshPlayer.Activated:Connect(refreshPlayerInfo)
+player.CharacterAdded:Connect(function()
+    task.defer(refreshPlayerInfo)
+end)
+
 local resetTracker = button(settingsFrame, "Zerar checklist do Halloween", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 0))
 local toggleTips = button(settingsFrame, "Ocultar dicas do evento", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 48))
 local tipsVisible = true
@@ -246,18 +321,26 @@ local function showPage(page)
     local isPerformance = page == "performance"
     local isHalloween = page == "halloween"
     local isSettings = page == "settings"
-    status.Visible = isHome
+    local isPlayer = page == "player"
+    status.Visible = isHome or isPerformance
     halloweenFrame.Visible = isHalloween
     settingsFrame.Visible = isSettings
+    playerFrame.Visible = isPlayer
     lowGraphics.Visible = isPerformance
     shadows.Visible = isPerformance
     effects.Visible = isPerformance
+    highGraphics.Visible = isPerformance
+    realisticGraphics.Visible = isPerformance
+    blackSky.Visible = isPerformance
+    visualCleanup.Visible = isPerformance
     restore.Visible = isPerformance
 
     if isHome then
-        status.Text = "MormawHub está ativo.\nHalloween: checklist manual do evento.\nGráficos: ajustes locais de iluminação."
+        status.Text = "MormawHub está ativo.\nHalloween: checklist manual.\nGráficos: perfis locais para priorizar FPS."
     elseif isPerformance then
-        status.Text = "Ajustes locais de iluminação e efeitos."
+        status.Text = "Perfis locais de imagem. A qualidade final também depende das configurações do Roblox."
+    elseif isPlayer then
+        refreshPlayerInfo()
     end
 end
 
@@ -277,59 +360,176 @@ end)
 homeTab.Activated:Connect(function() showPage("home") end)
 halloweenTab.Activated:Connect(function() showPage("halloween") end)
 performanceTab.Activated:Connect(function() showPage("performance") end)
+playerTab.Activated:Connect(function() showPage("player") end)
 settingsTab.Activated:Connect(function() showPage("settings") end)
 
 refreshTracker()
 
-local function setEffectsEnabled(enabled)
+local visualCleanupEnabled = false
+local blackSkyEnabled = false
+
+local function setPostEffectsEnabled(enabled)
     for _, obj in ipairs(Lighting:GetChildren()) do
-        if obj:IsA("PostEffect") then
-            obj.Enabled = enabled
+        if obj:IsA("PostEffect") then obj.Enabled = enabled end
+    end
+end
+
+local function applyLightProfile()
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.FogEnd = 100000
+    Lighting.Ambient = Color3.fromRGB(170, 170, 170)
+    Lighting.OutdoorAmbient = Color3.fromRGB(170, 170, 170)
+    setPostEffectsEnabled(false)
+end
+
+local function applyLowProfile()
+    applyLightProfile()
+    Lighting.Brightness = 0.8
+    Lighting.Ambient = Color3.fromRGB(100, 100, 100)
+    Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
+end
+
+local function applyUltraLightProfile()
+    applyLightProfile()
+    Lighting.Brightness = 1
+    Lighting.Ambient = Color3.fromRGB(80, 80, 80)
+    Lighting.OutdoorAmbient = Color3.fromRGB(80, 80, 80)
+    captureVisualEffects()
+    for obj in pairs(visualEffectsSnapshot) do
+        if obj and obj.Parent and isReducibleVisual(obj) then
+            pcall(function() obj.Enabled = false end)
         end
     end
 end
 
 lowGraphics.Activated:Connect(function()
-    Lighting.GlobalShadows = false
-    Lighting.Brightness = 1
-    Lighting.FogEnd = 100000
-    setEffectsEnabled(false)
-    status.Text = "Perfil baixo aplicado: sombras e efeitos locais desativados."
+    applyUltraLightProfile()
+    status.Text = "ULTRA LEVE aplicado: sombras, pós-efeitos e efeitos visuais reduzidos localmente."
     status.Visible = true
 end)
 
 shadows.Activated:Connect(function()
-    Lighting.GlobalShadows = not Lighting.GlobalShadows
-    shadows.Text = Lighting.GlobalShadows and "   Desativar sombras globais" or "   Ativar sombras globais"
-    status.Text = "Sombras globais: " .. (Lighting.GlobalShadows and "ativadas" or "desativadas")
+    applyLowProfile()
+    status.Text = "Perfil BAIXO aplicado: prioriza simplicidade visual."
     status.Visible = true
 end)
 
 effects.Activated:Connect(function()
-    local anyEnabled = false
-    for _, obj in ipairs(Lighting:GetChildren()) do
-        if obj:IsA("PostEffect") and obj.Enabled then
-            anyEnabled = true
-            break
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = original.Brightness
+    Lighting.Ambient = original.Ambient
+    Lighting.OutdoorAmbient = original.OutdoorAmbient
+    setPostEffectsEnabled(true)
+    status.Text = "Perfil MÉDIO aplicado: mantém iluminação original e ativa pós-efeitos."
+    status.Visible = true
+end)
+
+highGraphics.Activated:Connect(function()
+    Lighting.GlobalShadows = original.GlobalShadows
+    Lighting.Brightness = original.Brightness
+    Lighting.FogEnd = original.FogEnd
+    Lighting.Ambient = original.Ambient
+    Lighting.OutdoorAmbient = original.OutdoorAmbient
+    setPostEffectsEnabled(true)
+    status.Text = "Perfil ALTO aplicado com os valores de iluminação capturados ao iniciar. O Roblox controla a qualidade final."
+    status.Visible = true
+end)
+
+realisticGraphics.Activated:Connect(function()
+    Lighting.GlobalShadows = original.GlobalShadows
+    Lighting.Brightness = original.Brightness
+    Lighting.FogEnd = original.FogEnd
+    Lighting.ClockTime = original.ClockTime
+    Lighting.Ambient = original.Ambient
+    Lighting.OutdoorAmbient = original.OutdoorAmbient
+    Lighting.FogColor = original.FogColor
+    Lighting.ColorShift_Top = original.ColorShift_Top
+    Lighting.ColorShift_Bottom = original.ColorShift_Bottom
+    Lighting.ExposureCompensation = original.ExposureCompensation
+    for obj, enabled in pairs(effectsSnapshot) do
+        if obj and obj.Parent then pcall(function() obj.Enabled = enabled end) end
+    end
+    status.Text = "Perfil REALISTA: restaura iluminação e pós-efeitos capturados. Não altera o nível gráfico global do Roblox."
+    status.Visible = true
+end)
+
+blackSky.Activated:Connect(function()
+    blackSkyEnabled = not blackSkyEnabled
+    if blackSkyEnabled then
+        for _, obj in ipairs(Lighting:GetChildren()) do
+            if obj:IsA("Sky") then obj.Parent = nil end
+        end
+        Lighting.ClockTime = 0
+        Lighting.Brightness = 0
+        Lighting.Ambient = Color3.new(0, 0, 0)
+        Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+        Lighting.FogColor = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Top = Color3.new(0, 0, 0)
+        Lighting.ColorShift_Bottom = Color3.new(0, 0, 0)
+        Lighting.ExposureCompensation = -2
+        blackSky.Text = "   Desativar céu totalmente escuro"
+        status.Text = "Modo escuro ativado localmente. Pode ocultar detalhes e dificultar a visão."
+    else
+        for _, sky in ipairs(originalSkies) do
+            if sky then sky.Parent = Lighting end
+        end
+        Lighting.ClockTime = original.ClockTime
+        Lighting.Brightness = original.Brightness
+        Lighting.Ambient = original.Ambient
+        Lighting.OutdoorAmbient = original.OutdoorAmbient
+        Lighting.FogColor = original.FogColor
+        Lighting.ColorShift_Top = original.ColorShift_Top
+        Lighting.ColorShift_Bottom = original.ColorShift_Bottom
+        Lighting.ExposureCompensation = original.ExposureCompensation
+        blackSky.Text = "   Ativar céu totalmente escuro"
+        status.Text = "Modo escuro desativado; iluminação original restaurada."
+    end
+    status.Visible = true
+end)
+
+visualCleanup.Activated:Connect(function()
+    visualCleanupEnabled = not visualCleanupEnabled
+    captureVisualEffects()
+    for obj, enabled in pairs(visualEffectsSnapshot) do
+        if obj and obj.Parent and isReducibleVisual(obj) then
+            pcall(function() obj.Enabled = visualCleanupEnabled and false or enabled end)
         end
     end
-    setEffectsEnabled(anyEnabled)
-    effects.Text = anyEnabled and "   Desativar efeitos pós-processamento" or "   Ativar efeitos pós-processamento"
-    status.Text = anyEnabled and "Efeitos pós-processamento desativados." or "Efeitos pós-processamento ativados."
+    visualCleanup.Text = visualCleanupEnabled and "   Restaurar partículas e efeitos visuais" or "   Reduzir partículas e efeitos animados"
+    status.Text = visualCleanupEnabled
+        and "Partículas, trilhas, beams, fogo, fumaça, brilhos e highlights foram ocultados localmente quando suportado."
+        or "Estados dos efeitos visuais capturados foram restaurados quando possível."
     status.Visible = true
 end)
 
 restore.Activated:Connect(function()
+    blackSkyEnabled = false
+    visualCleanupEnabled = false
+    for _, sky in ipairs(originalSkies) do
+        if sky then sky.Parent = Lighting end
+    end
     Lighting.GlobalShadows = original.GlobalShadows
     Lighting.Brightness = original.Brightness
     Lighting.FogEnd = original.FogEnd
+    Lighting.ClockTime = original.ClockTime
+    Lighting.Ambient = original.Ambient
+    Lighting.OutdoorAmbient = original.OutdoorAmbient
+    Lighting.FogColor = original.FogColor
+    Lighting.ColorShift_Top = original.ColorShift_Top
+    Lighting.ColorShift_Bottom = original.ColorShift_Bottom
+    Lighting.ExposureCompensation = original.ExposureCompensation
     for obj, enabled in pairs(effectsSnapshot) do
-        if obj and obj.Parent then
-            obj.Enabled = enabled
+        if obj and obj.Parent then pcall(function() obj.Enabled = enabled end) end
+    end
+    for obj, enabled in pairs(visualEffectsSnapshot) do
+        if obj and obj.Parent and isReducibleVisual(obj) then
+            pcall(function() obj.Enabled = enabled end)
         end
     end
-    shadows.Text = Lighting.GlobalShadows and "   Desativar sombras globais" or "   Ativar sombras globais"
-    status.Text = "Configurações de iluminação restauradas quando possível."
+    blackSky.Text = "   Ativar céu totalmente escuro"
+    visualCleanup.Text = "   Reduzir partículas e efeitos animados"
+    status.Text = "Configurações de iluminação e efeitos restauradas quando possível."
     status.Visible = true
 end)
 
