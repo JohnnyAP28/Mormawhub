@@ -74,3 +74,35 @@ Essas opções alteram propriedades locais que o cliente consegue acessar; elas 
 - Não existe um limitador ou desbloqueador de FPS real nesta versão; o script não consegue forçar o FPS além dos controles suportados pelo cliente Roblox.
 - As ações de farm, roubo, coleta e teleporte não estão implementadas. Não use este projeto para automatizar ou interferir em jogos de terceiros. Para essas mecânicas, implemente a lógica no seu próprio jogo e valide ações no servidor.
 - O script pode não restaurar efeitos que sejam criados depois de sua inicialização.
+
+## Atualização — testes controlados e métricas
+
+A aba **Testes** adiciona ferramentas para diagnóstico no projeto próprio:
+
+- **FPS aproximado:** amostra de quadros por segundo no cliente, atualizada por intervalos de aproximadamente um segundo.
+- **Memória:** tenta consultar o consumo total de memória reportado pelo Roblox.
+- **Ping:** tenta ler a métrica de rede disponível no cliente; a API pode não expor o valor em todos os contextos.
+- **WalkSpeed de teste:** permite testar valores 16, 24, 32 e 48 depois de ativar explicitamente o modo de teste.
+- **Voo de teste:** movimento local experimental com WASD, Espaço e Ctrl; requer teclado e pode ser corrigido pela simulação/servidor.
+- **Teleporte de teste:** procura o primeiro objeto `SpawnLocation` do mapa e move o personagem localmente para perto dele.
+- **Animações:** permite parar as tracks que estiverem tocando no Animator do próprio personagem durante o teste.
+
+### Como testar no Roblox Studio
+
+1. Use uma cópia de desenvolvimento da sua experiência e inicie **Test** com um cliente e servidor.
+2. Coloque o script como `LocalScript` em `StarterPlayer > StarterPlayerScripts`.
+3. Abra **Testes** e registre FPS, memória e ping em uma situação-base.
+4. Repita a mesma sequência com cada perfil gráfico, mantendo mapa, câmera e número de jogadores iguais.
+5. Teste movimento e animações apenas no servidor de desenvolvimento. Confirme no servidor o estado esperado e verifique o Output por erros.
+6. Desative o modo de teste e feche o painel ao terminar.
+
+### Interpretação e limites
+
+- FPS é uma estimativa calculada no cliente, não uma métrica de servidor. Para análise precisa, use Roblox Studio MicroProfiler e Developer Console, comparando cliente e servidor.
+- Memória e ping dependem das métricas que o cliente disponibiliza; podem aparecer como indisponíveis.
+- Os controles de velocidade, voo e teleporte são **experimentos locais**, não um sistema de autorização nem testes de segurança do servidor. Eles não provam que o servidor aceitou a mudança.
+- Para validar mecânicas corretamente, adicione comandos de teste no código do seu próprio jogo, protegidos por uma allowlist de UserIds de desenvolvedores/testadores, validação server-side e execução apenas em servidor de teste. Não use os controles para obter vantagens em experiências de terceiros.
+- O botão de parar animações atua nas tracks do Animator do personagem local; animações iniciadas novamente pelo jogo podem voltar.
+- As medições e os estados de checklist não são persistidos e não são enviados a serviços externos.
+
+O código original de interface, checklist de Halloween, perfis gráficos e aba Player foi mantido; a nova aba **Testes** foi adicionada separadamente.
