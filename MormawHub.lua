@@ -376,6 +376,8 @@ metricsLabel.LayoutOrder = 1
 metricsLabel.TextYAlignment = Enum.TextYAlignment.Top
 
 local testModeEnabled = false
+local selectedSpeed = 16
+local setTestSpeed
 local flyEnabled = false
 local flyVelocity
 local flyConnection
@@ -831,6 +833,7 @@ local function bindTestRemote(remote)
         elseif kind == "TestMode" then
             testModeEnabled = value == true
             testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
+            if testModeEnabled and setTestSpeed then setTestSpeed(selectedSpeed, true) end
             if not testModeEnabled then
                 stopFlight()
                 if stopAimAssist then stopAimAssist() end
@@ -845,8 +848,7 @@ trackConnection(ReplicatedStorage.ChildAdded:Connect(function(child)
     end
 end))
 
-local selectedSpeed = 16
-local function setTestSpeed(value, applyToServer)
+setTestSpeed = function(value, applyToServer)
     selectedSpeed = math.clamp(math.floor(tonumber(value) or 16), 0, 100)
     speedValueLabel.Text = "Velocidade de teste: " .. selectedSpeed .. " / 100"
     speedFill.Size = UDim2.new(selectedSpeed / 100, 0, 1, 0)
