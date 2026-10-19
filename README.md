@@ -73,12 +73,13 @@ Mostra nome, estado do personagem, Humanoid, vida, velocidade e disponibilidade 
 - **FPS aproximado:** amostra de quadros por segundo do cliente.
 - **Memória:** tenta ler o consumo de memória informado pelo Roblox.
 - **Ping:** tenta ler a métrica de rede exposta pelo cliente; pode ficar indisponível.
-- **Velocidade:** barra contínua de **0 a 100**, com atualização do valor selecionado.
+- **Velocidade:** barra contínua de **0 a 100**, com atualização do valor selecionado. O valor escolhido antes da autorização é aplicado quando o servidor confirma o modo de teste.
 - **Teleporte:** permite percorrer os destinos permitidos encontrados no mapa. O servidor valida o destino selecionado e executa o teleporte.
-- **Voo experimental:** controle local de teste; depende da simulação e pode não funcionar em todas as configurações de personagem.
+- **Voo experimental:** controle local de teste; o analógico/controles de movimento cuidam do deslocamento horizontal, e botões de toque permitem subir/descer no celular. No teclado, use Espaço/Ctrl.
+- **Aim de teste:** mira apenas NPCs da própria experiência que o desenvolvedor marcar com a tag `MormawAimTarget`; exige modo de teste autorizado, tem alcance de 250 studs e não mira outros jogadores.
 - **Animações:** tenta parar as tracks em execução no Animator do personagem local.
 
-A velocidade e o teleporte usam `MormawHubTestRemote`, criado pelo script de servidor. O servidor valida ambiente, autorização, modo de teste, intervalo de velocidade (0–100) e destino. Para teleporte, adicione `SpawnLocation` ao mapa ou uma peça chamada `TestSpawn` ou `MormawTestSpawn`. O destino é selecionado na aba Testes antes de teleportar.
+A velocidade e o teleporte usam `MormawHubTestRemote`, criado pelo script de servidor. O aim de teste atua somente em NPCs marcados com `MormawAimTarget` na experiência autorizada. O servidor valida ambiente, autorização, modo de teste, intervalo de velocidade (0–100) e destino. Para teleporte, adicione `SpawnLocation` ao mapa ou uma peça chamada `TestSpawn` ou `MormawTestSpawn`. O destino é selecionado na aba Testes antes de teleportar.
 
 ### Teste de desempenho repetível
 
@@ -93,7 +94,7 @@ A velocidade e o teleporte usam `MormawHubTestRemote`, criado pelo script de ser
 - O código da interface não contém a implementação interna do evento de borboletas; apenas o projeto da experiência pode fornecer a integração correta.
 - O checklist não salva progresso nem sincroniza com a conta.
 - FPS, memória e ping são métricas aproximadas e dependem do que o cliente expõe.
-- O voo e a parada de animações são controles locais de teste; o jogo pode reiniciar animações ou corrigir movimento.
+- O voo e a parada de animações são controles locais de teste; o jogo pode reiniciar animações ou corrigir movimento. O aim só reconhece NPCs marcados com `MormawAimTarget`.
 - A barra de velocidade e o teleporte dependem da instalação do script server-side e de uma conta autorizada.
 - Não há promessa de FPS fixo, desbloqueio de FPS ou remoção universal de efeitos.
 - Use os scripts de teste somente em uma experiência que você controla/autorizou.
