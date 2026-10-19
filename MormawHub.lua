@@ -358,6 +358,7 @@ speedKnob.Size = UDim2.fromOffset(18, 18)
 speedKnob.BackgroundColor3 = Color3.fromRGB(240, 244, 248)
 speedKnob.BorderSizePixel = 0
 speedKnob.ZIndex = 3
+speedKnob.Active = true
 speedKnob.Parent = speedTrack
 corner(speedKnob, 9)
 local speedHint = label(testsFrame, "Arraste a barra para escolher qualquer valor entre 0 e 100.", UDim2.new(1, -6, 0, 24), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
@@ -721,7 +722,6 @@ local function setSliderFromX(x)
     setTestSpeed(math.floor(alpha * 100 + 0.5))
 end
 local sliderDragging = false
-speedTrack.Activated:Connect(function() setSliderFromX(UserInputService:GetMouseLocation().X) end)
 speedTrack.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         sliderDragging = true
@@ -869,6 +869,7 @@ end)
 
 close.Activated:Connect(function()
     stopFlight()
+    if testRemote and testModeEnabled then testRemote:FireServer("SetTestMode", false) end
     if metricsConnection then metricsConnection:Disconnect() end
     gui:Destroy()
 end)
