@@ -7,6 +7,7 @@
 ]]
 
 local Players = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -24,6 +25,7 @@ end
 local restoreLocalSettings
 local clearPlayerInfoConnections
 local stopFlight
+local stopAimAssist
 
 -- Evita duplicar a interface ao executar novamente.
 local previous = playerGui:FindFirstChild("MormawHubGui")
@@ -85,6 +87,7 @@ gui.Parent = playerGui
 
 gui.Destroying:Connect(function()
     if stopFlight then pcall(stopFlight) end
+    if stopAimAssist then pcall(stopAimAssist) end
     if restoreLocalSettings then pcall(restoreLocalSettings) end
     if clearPlayerInfoConnections then pcall(clearPlayerInfoConnections) end
     for _, connection in ipairs(externalConnections) do
@@ -376,6 +379,9 @@ local testModeEnabled = false
 local flyEnabled = false
 local flyVelocity
 local flyConnection
+local flyVerticalDirection = 0
+local aimAssistEnabled = false
+local aimAssistConnection
 local testRemote = ReplicatedStorage:FindFirstChild("MormawHubTestRemote")
 local selectedSpawnIndex = 1
 local spawnTargets = {}
@@ -422,16 +428,24 @@ speedHint.LayoutOrder = 6
 
 local flyButton = button(testsFrame, "Ativar voo de teste", UDim2.new(1, -6, 0, 34), UDim2.new())
 flyButton.LayoutOrder = 7
+local flyUpButton = button(testsFrame, "Segure para subir ▲", UDim2.new(1, -6, 0, 32), UDim2.new())
+flyUpButton.LayoutOrder = 8
+flyUpButton.Visible = false
+local flyDownButton = button(testsFrame, "Segure para descer ▼", UDim2.new(1, -6, 0, 32), UDim2.new())
+flyDownButton.LayoutOrder = 9
+flyDownButton.Visible = false
+local aimAssistButton = button(testsFrame, "Aim de teste: desligado", UDim2.new(1, -6, 0, 34), UDim2.new())
+aimAssistButton.LayoutOrder = 10
 local spawnTargetButton = button(testsFrame, "Destino: procurando SpawnLocation...", UDim2.new(1, -6, 0, 34), UDim2.new())
-spawnTargetButton.LayoutOrder = 8
+spawnTargetButton.LayoutOrder = 11
 local spawnButton = button(testsFrame, "Teleportar para destino selecionado", UDim2.new(1, -6, 0, 34), UDim2.new())
-spawnButton.LayoutOrder = 9
+spawnButton.LayoutOrder = 12
 local stopAnimations = button(testsFrame, "Parar animações atuais do meu personagem", UDim2.new(1, -6, 0, 34), UDim2.new())
-stopAnimations.LayoutOrder = 10
+stopAnimations.LayoutOrder = 13
 local testsDisclaimer = label(testsFrame,
-    "Velocidade e teleporte usam o script de servidor autorizado deste repositório. Ative o modo de teste somente no seu ambiente. Voo é experimental/local; parar animações afeta apenas tracks do seu personagem.",
+    "Speed e teleporte usam o servidor autorizado. Voo funciona com teclado ou botões de toque. Aim só mira NPCs com a tag MormawAimTarget na sua experiência de teste. Parar animações afeta tracks do seu personagem.",
     UDim2.new(1, -6, 0, 60), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
-testsDisclaimer.LayoutOrder = 11
+testsDisclaimer.LayoutOrder = 14
 testsDisclaimer.TextYAlignment = Enum.TextYAlignment.Top
 
 local playerInfoConnections = {}
@@ -794,7 +808,10 @@ stopFlight = function()
     flyEnabled = false
     if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
     if flyVelocity then flyVelocity:Destroy(); flyVelocity = nil end
+    flyVerticalDirection = 0
     if flyButton and flyButton.Parent then flyButton.Text = "Ativar voo de teste" end
+    if flyUpButton and flyUpButton.Parent then flyUpButton.Visible = false end
+    if flyDownButton and flyDownButton.Parent then flyDownButton.Visible = false end
 end
 
 testModeButton.Activated:Connect(function()
@@ -814,7 +831,10 @@ local function bindTestRemote(remote)
         elseif kind == "TestMode" then
             testModeEnabled = value == true
             testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
-            if not testModeEnabled then stopFlight() end
+            if not testModeEnabled then
+                stopFlight()
+                if stopAimAssist then stopAimAssist() end
+            end
         end
     end)
 end
@@ -921,7 +941,10 @@ flyButton.Activated:Connect(function()
         return
     end
     flyEnabled = true
+    flyVerticalDirection = 0
     flyButton.Text = "Desativar voo de teste"
+    flyUpButton.Visible = true
+    flyDownButton.Visible = true
     flyVelocity = Instance.new("BodyVelocity")
     flyVelocity.Name = "MormawTestFlightVelocity"
     flyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
@@ -933,10 +956,69 @@ flyButton.Activated:Connect(function()
         local direction = humanoid.MoveDirection
         local vertical = 0
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vertical = 35
-        elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then vertical = -35 end
+        elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then vertical = -35
+        else vertical = flyVerticalDirection * 35 end
         flyVelocity.Velocity = direction * 42 + Vector3.new(0, vertical, 0)
     end)
-    testStatus.Text = "Voo de teste ativo: use WASD para mover, Espaço para subir e Ctrl para descer (teclado)."
+    testStatus.Text = "Voo ativo: use o analógico para mover; segure ▲/▼ para subir/descer. Teclado: Espaço/Ctrl."
+end)
+
+local function bindVerticalHold(control, direction)
+    control.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if flyEnabled then flyVerticalDirection = direction end
+        end
+    end)
+    control.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if flyVerticalDirection == direction then flyVerticalDirection = 0 end
+        end
+    end)
+end
+bindVerticalHold(flyUpButton, 1)
+bindVerticalHold(flyDownButton, -1)
+
+-- Aim de teste limitado a NPCs explicitamente marcados pelo desenvolvedor.
+stopAimAssist = function()
+    aimAssistEnabled = false
+    if aimAssistConnection then aimAssistConnection:Disconnect(); aimAssistConnection = nil end
+    if aimAssistButton and aimAssistButton.Parent then aimAssistButton.Text = "Aim de teste: desligado" end
+end
+
+aimAssistButton.Activated:Connect(function()
+    if not testModeEnabled then
+        testStatus.Text = "Ative o modo de teste autorizado antes de usar o aim de teste."
+        return
+    end
+    if aimAssistEnabled then
+        stopAimAssist()
+        testStatus.Text = "Aim de teste desativado."
+        return
+    end
+    aimAssistEnabled = true
+    aimAssistButton.Text = "Aim de teste: ligado"
+    aimAssistConnection = RunService.RenderStepped:Connect(function()
+        if not testModeEnabled then stopAimAssist(); return end
+        local camera = Workspace.CurrentCamera
+        if not camera then return end
+        local bestPart, bestDistance
+        local cameraPosition = camera.CFrame.Position
+        for _, instance in ipairs(CollectionService:GetTagged("MormawAimTarget")) do
+            local model = instance:IsA("Model") and instance or instance:FindFirstAncestorOfClass("Model")
+            if model and model ~= player.Character and model:IsDescendantOf(Workspace) then
+                local humanoid = model:FindFirstChildOfClass("Humanoid")
+                local targetPart = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+                if humanoid and humanoid.Health > 0 and targetPart and targetPart:IsA("BasePart") then
+                    local distance = (targetPart.Position - cameraPosition).Magnitude
+                    if distance <= 250 and (not bestDistance or distance < bestDistance) then
+                        bestPart, bestDistance = targetPart, distance
+                    end
+                end
+            end
+        end
+        if bestPart then camera.CFrame = CFrame.lookAt(camera.CFrame.Position, bestPart.Position) end
+    end)
+    testStatus.Text = "Aim de teste ativo para NPCs com a tag MormawAimTarget (até 250 studs)."
 end)
 
 spawnButton.Activated:Connect(function()
@@ -975,9 +1057,10 @@ stopAnimations.Activated:Connect(function()
     testStatus.Text = "Paradas " .. #tracks .. " tracks de animação atuais do seu personagem. Animações replicadas ou reiniciadas pelo servidor podem voltar."
 end)
 
-player.CharacterAdded:Connect(function()
+trackConnection(player.CharacterAdded:Connect(function()
     stopFlight()
-end)
+    if stopAimAssist then stopAimAssist() end
+end))
 
 -- Ícone flutuante: ao minimizar, a janela desaparece por completo.
 local reopen = button(gui, "🇧🇷", UDim2.fromOffset(54, 54), UDim2.new(0, 18, 0.5, -27))
