@@ -9,6 +9,8 @@
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -157,11 +159,12 @@ tabs.Position = UDim2.fromOffset(14, 78)
 tabs.Size = UDim2.new(1, -28, 0, 34)
 tabs.Parent = panel
 
-local homeTab = button(tabs, "Início", UDim2.new(0.2, -5, 1, 0), UDim2.fromOffset(0, 0))
-local halloweenTab = button(tabs, "Halloween", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.2, 1, 0, 0))
-local performanceTab = button(tabs, "Gráficos", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.4, 2, 0, 0))
-local playerTab = button(tabs, "Player", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.6, 3, 0, 0))
-local settingsTab = button(tabs, "Ajustes", UDim2.new(0.2, -5, 1, 0), UDim2.new(0.8, 4, 0, 0))
+local homeTab = button(tabs, "Início", UDim2.new(1/6, -4, 1, 0), UDim2.fromOffset(0, 0))
+local halloweenTab = button(tabs, "Halloween", UDim2.new(1/6, -4, 1, 0), UDim2.new(1/6, 1, 0, 0))
+local performanceTab = button(tabs, "Gráficos", UDim2.new(1/6, -4, 1, 0), UDim2.new(2/6, 2, 0, 0))
+local playerTab = button(tabs, "Player", UDim2.new(1/6, -4, 1, 0), UDim2.new(3/6, 3, 0, 0))
+local testsTab = button(tabs, "Testes", UDim2.new(1/6, -4, 1, 0), UDim2.new(4/6, 4, 0, 0))
+local settingsTab = button(tabs, "Ajustes", UDim2.new(1/6, -4, 1, 0), UDim2.new(5/6, 5, 0, 0))
 
 local content = Instance.new("Frame")
 content.BackgroundTransparency = 1
@@ -288,9 +291,64 @@ local playerInfo = label(playerFrame, "Carregando informações do personagem...
 playerInfo.TextYAlignment = Enum.TextYAlignment.Top
 local refreshPlayer = button(playerFrame, "Atualizar status do personagem", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 108))
 local playerNotice = label(playerFrame,
-    "Velocidade, voo e movimento são controlados pelas regras da experiência. Esta aba não altera vantagens de gameplay.",
+    "Use Testes para controles experimentais. Eles são locais e podem ser corrigidos pelo servidor; valide a lógica de gameplay no código do seu próprio jogo.",
     UDim2.new(1, 0, 0, 84), UDim2.fromOffset(0, 158), 11, Color3.fromRGB(155, 161, 178))
 playerNotice.TextYAlignment = Enum.TextYAlignment.Top
+
+local testsFrame = Instance.new("ScrollingFrame")
+testsFrame.Name = "TestsPage"
+testsFrame.BackgroundTransparency = 1
+testsFrame.BorderSizePixel = 0
+testsFrame.Position = UDim2.fromOffset(0, 0)
+testsFrame.Size = UDim2.new(1, 0, 1, 0)
+testsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+testsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+testsFrame.ScrollBarThickness = 4
+testsFrame.Visible = false
+testsFrame.Parent = content
+
+local testsLayout = Instance.new("UIListLayout")
+testsLayout.Padding = UDim.new(0, 6)
+testsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+testsLayout.Parent = testsFrame
+local testsPadding = Instance.new("UIPadding")
+testsPadding.PaddingRight = UDim.new(0, 5)
+testsPadding.PaddingBottom = UDim.new(0, 5)
+testsPadding.Parent = testsFrame
+
+local metricsLabel = label(testsFrame, "Métricas: coletando amostras...", UDim2.new(1, -6, 0, 70), UDim2.new(), 12, Color3.fromRGB(125, 220, 157))
+metricsLabel.LayoutOrder = 1
+metricsLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+local testModeEnabled = false
+local flyEnabled = false
+local flyVelocity
+local flyConnection
+local testStatus = label(testsFrame, "Modo de teste desligado. Ative para habilitar os controles locais abaixo.", UDim2.new(1, -6, 0, 40), UDim2.new(), 11, Color3.fromRGB(220, 190, 110))
+testStatus.LayoutOrder = 2
+testStatus.TextYAlignment = Enum.TextYAlignment.Top
+
+local testModeButton = button(testsFrame, "ATIVAR MODO DE TESTE", UDim2.new(1, -6, 0, 36), UDim2.new())
+testModeButton.LayoutOrder = 3
+local speed16 = button(testsFrame, "Velocidade 16 (padrão)", UDim2.new(1, -6, 0, 34), UDim2.new())
+speed16.LayoutOrder = 4
+local speed24 = button(testsFrame, "Velocidade 24", UDim2.new(1, -6, 0, 34), UDim2.new())
+speed24.LayoutOrder = 5
+local speed32 = button(testsFrame, "Velocidade 32", UDim2.new(1, -6, 0, 34), UDim2.new())
+speed32.LayoutOrder = 6
+local speed48 = button(testsFrame, "Velocidade 48", UDim2.new(1, -6, 0, 34), UDim2.new())
+speed48.LayoutOrder = 7
+local flyButton = button(testsFrame, "Ativar voo de teste", UDim2.new(1, -6, 0, 34), UDim2.new())
+flyButton.LayoutOrder = 8
+local spawnButton = button(testsFrame, "Teletransportar ao Spawn de teste", UDim2.new(1, -6, 0, 34), UDim2.new())
+spawnButton.LayoutOrder = 9
+local stopAnimations = button(testsFrame, "Parar animações atuais do meu personagem", UDim2.new(1, -6, 0, 34), UDim2.new())
+stopAnimations.LayoutOrder = 10
+local testsDisclaimer = label(testsFrame,
+    "Teste local: velocidade/voo/teleporte podem ser sobrescritos pelo servidor. Parar animações afeta apenas as tracks do seu próprio personagem. Para testes de rede reais, implemente endpoints de teste no servidor do seu jogo.",
+    UDim2.new(1, -6, 0, 72), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
+testsDisclaimer.LayoutOrder = 11
+testsDisclaimer.TextYAlignment = Enum.TextYAlignment.Top
 
 local function refreshPlayerInfo()
     local character = player.Character
@@ -322,10 +380,12 @@ local function showPage(page)
     local isHalloween = page == "halloween"
     local isSettings = page == "settings"
     local isPlayer = page == "player"
+    local isTests = page == "tests"
     status.Visible = isHome or isPerformance
     halloweenFrame.Visible = isHalloween
     settingsFrame.Visible = isSettings
     playerFrame.Visible = isPlayer
+    testsFrame.Visible = isTests
     lowGraphics.Visible = isPerformance
     shadows.Visible = isPerformance
     effects.Visible = isPerformance
@@ -341,6 +401,8 @@ local function showPage(page)
         status.Text = "Perfis locais de imagem. A qualidade final também depende das configurações do Roblox."
     elseif isPlayer then
         refreshPlayerInfo()
+    elseif isTests then
+        testStatus.Text = testModeEnabled and "Modo de teste ATIVO." or "Modo de teste desligado. Ative para habilitar os controles locais abaixo."
     end
 end
 
@@ -361,6 +423,7 @@ homeTab.Activated:Connect(function() showPage("home") end)
 halloweenTab.Activated:Connect(function() showPage("halloween") end)
 performanceTab.Activated:Connect(function() showPage("performance") end)
 playerTab.Activated:Connect(function() showPage("player") end)
+testsTab.Activated:Connect(function() showPage("tests") end)
 settingsTab.Activated:Connect(function() showPage("settings") end)
 
 refreshTracker()
@@ -539,6 +602,153 @@ restore.Activated:Connect(function()
     status.Visible = true
 end)
 
+
+-- Métricas aproximadas do cliente: FPS por amostras de RenderStepped, memória total
+-- e ping quando a API de Stats disponibiliza esses valores.
+local fpsFrames, fpsElapsed, measuredFps = 0, 0, 0
+local metricsConnection = RunService.RenderStepped:Connect(function(dt)
+    fpsFrames += 1
+    fpsElapsed += dt
+    if fpsElapsed >= 1 then
+        measuredFps = math.floor(fpsFrames / math.max(fpsElapsed, 0.001) + 0.5)
+        fpsFrames, fpsElapsed = 0, 0
+        local memoryText = "indisponível"
+        local pingText = "indisponível"
+        pcall(function()
+            memoryText = string.format("%.1f MB", Stats:GetTotalMemoryUsageMb())
+        end)
+        pcall(function()
+            local network = Stats:FindFirstChild("Network")
+            local serverStats = network and network:FindFirstChild("ServerStatsItem")
+            local dataPing = serverStats and serverStats:FindFirstChild("Data Ping")
+            if dataPing then pingText = dataPing:GetValueString() end
+        end)
+        metricsLabel.Text = "MÉTRICAS DO CLIENTE (aproximadas)\nFPS: " .. measuredFps
+            .. "\nMemória Roblox: " .. memoryText .. "\nPing: " .. pingText
+    end
+end)
+
+local function getTestHumanoid()
+    local character = player.Character
+    return character and character:FindFirstChildOfClass("Humanoid"), character
+end
+
+local function stopFlight()
+    flyEnabled = false
+    if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
+    if flyVelocity then flyVelocity:Destroy(); flyVelocity = nil end
+    flyButton.Text = "Ativar voo de teste"
+end
+
+testModeButton.Activated:Connect(function()
+    testModeEnabled = not testModeEnabled
+    testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
+    testStatus.Text = testModeEnabled and "Modo de teste ATIVO: os controles locais estão liberados." or "Modo de teste desligado."
+    if not testModeEnabled then
+        stopFlight()
+        local humanoid = getTestHumanoid()
+        if humanoid then humanoid.WalkSpeed = 16 end
+    end
+end)
+
+local function setTestSpeed(value)
+    if not testModeEnabled then
+        testStatus.Text = "Ative o MODO DE TESTE antes de alterar a velocidade."
+        return
+    end
+    local humanoid = getTestHumanoid()
+    if not humanoid then
+        testStatus.Text = "Não encontrei o Humanoid. Aguarde o personagem carregar."
+        return
+    end
+    humanoid.WalkSpeed = value
+    testStatus.Text = "WalkSpeed local definido para " .. value .. ". O servidor pode sobrescrever esse valor."
+end
+speed16.Activated:Connect(function() setTestSpeed(16) end)
+speed24.Activated:Connect(function() setTestSpeed(24) end)
+speed32.Activated:Connect(function() setTestSpeed(32) end)
+speed48.Activated:Connect(function() setTestSpeed(48) end)
+
+flyButton.Activated:Connect(function()
+    if not testModeEnabled then
+        testStatus.Text = "Ative o MODO DE TESTE antes de iniciar o voo."
+        return
+    end
+    if flyEnabled then
+        stopFlight()
+        testStatus.Text = "Voo de teste desativado."
+        return
+    end
+    local humanoid, character = getTestHumanoid()
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root then
+        testStatus.Text = "Personagem ainda não está pronto para voo."
+        return
+    end
+    flyEnabled = true
+    flyButton.Text = "Desativar voo de teste"
+    flyVelocity = Instance.new("BodyVelocity")
+    flyVelocity.Name = "MormawTestFlightVelocity"
+    flyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    flyVelocity.P = 1e4
+    flyVelocity.Velocity = Vector3.zero
+    flyVelocity.Parent = root
+    flyConnection = RunService.Heartbeat:Connect(function()
+        if not flyEnabled or not root.Parent then stopFlight(); return end
+        local direction = humanoid.MoveDirection
+        local vertical = 0
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vertical = 35
+        elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then vertical = -35 end
+        flyVelocity.Velocity = direction * 42 + Vector3.new(0, vertical, 0)
+    end)
+    testStatus.Text = "Voo de teste ativo: use WASD para mover, Espaço para subir e Ctrl para descer (teclado)."
+end)
+
+spawnButton.Activated:Connect(function()
+    if not testModeEnabled then
+        testStatus.Text = "Ative o MODO DE TESTE antes de usar o teleporte."
+        return
+    end
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        testStatus.Text = "Personagem ainda não está pronto."
+        return
+    end
+    local spawnPart
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("SpawnLocation") then spawnPart = obj; break end
+    end
+    if not spawnPart then
+        testStatus.Text = "Nenhum SpawnLocation encontrado no mapa."
+        return
+    end
+    root.CFrame = spawnPart.CFrame + Vector3.new(0, 5, 0)
+    testStatus.Text = "Teleport local para o SpawnLocation de teste solicitado. O servidor pode corrigir a posição."
+end)
+
+stopAnimations.Activated:Connect(function()
+    if not testModeEnabled then
+        testStatus.Text = "Ative o MODO DE TESTE antes de testar animações."
+        return
+    end
+    local humanoid, character = getTestHumanoid()
+    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+    if not animator then
+        testStatus.Text = "Animator não encontrado no personagem."
+        return
+    end
+    local tracks = animator:GetPlayingAnimationTracks()
+    for _, track in ipairs(tracks) do
+        pcall(function() track:Stop(0.1) end)
+    end
+    testStatus.Text = "Paradas " .. #tracks .. " tracks de animação atuais do seu personagem. Animações replicadas ou reiniciadas pelo servidor podem voltar."
+end)
+
+player.CharacterAdded:Connect(function()
+    stopFlight()
+end)
+
 -- Ícone flutuante: ao minimizar, a janela desaparece por completo.
 local reopen = button(gui, "🇧🇷", UDim2.fromOffset(54, 54), UDim2.new(0, 18, 0.5, -27))
 reopen.Name = "MormawFloatingIcon"
@@ -559,6 +769,8 @@ reopen.Activated:Connect(function()
 end)
 
 close.Activated:Connect(function()
+    stopFlight()
+    if metricsConnection then metricsConnection:Disconnect() end
     gui:Destroy()
 end)
 
