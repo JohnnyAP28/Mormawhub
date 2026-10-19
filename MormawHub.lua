@@ -686,40 +686,47 @@ testModeButton.Activated:Connect(function()
     testRemote:FireServer("SetTestMode", not testModeEnabled)
 end)
 
-if testRemote then
-    testRemote.OnClientEvent:Connect(function(kind, value)
+local function bindTestRemote(remote)
+    testRemote = remote
+    remote.OnClientEvent:Connect(function(kind, value)
         if kind == "Status" then
             testStatus.Text = tostring(value)
         elseif kind == "TestMode" then
             testModeEnabled = value == true
             testModeButton.Text = testModeEnabled and "DESATIVAR MODO DE TESTE" or "ATIVAR MODO DE TESTE"
-            if not testModeEnabled then
-                stopFlight()
-            end
+            if not testModeEnabled then stopFlight() end
         end
     end)
 end
+if testRemote then bindTestRemote(testRemote) end
+ReplicatedStorage.ChildAdded:Connect(function(child)
+    if child.Name == "MormawHubTestRemote" and child:IsA("RemoteEvent") and not testRemote then
+        bindTestRemote(child)
+    end
+end)
 
-local function setTestSpeed(value)
-    value = math.clamp(math.floor(tonumber(value) or 16), 0, 100)
-    speedValueLabel.Text = "Velocidade de teste: " .. value .. " / 100"
-    speedFill.Size = UDim2.new(value / 100, 0, 1, 0)
-    speedKnob.Position = UDim2.new(value / 100, 0, 0.5, 0)
+local selectedSpeed = 16
+local function setTestSpeed(value, applyToServer)
+    selectedSpeed = math.clamp(math.floor(tonumber(value) or 16), 0, 100)
+    speedValueLabel.Text = "Velocidade de teste: " .. selectedSpeed .. " / 100"
+    speedFill.Size = UDim2.new(selectedSpeed / 100, 0, 1, 0)
+    speedKnob.Position = UDim2.new(selectedSpeed / 100, 0, 0.5, 0)
+    if not applyToServer then return end
     if not testModeEnabled then
         testStatus.Text = "Ative o MODO DE TESTE antes de aplicar a velocidade."
         return
     end
     if not testRemote then
-        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua no ServerScriptService."
+        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua em ServerScriptService."
         return
     end
-    testRemote:FireServer("SetSpeed", value)
+    testRemote:FireServer("SetSpeed", selectedSpeed)
 end
 
 local function setSliderFromX(x)
     local width = math.max(speedTrack.AbsoluteSize.X, 1)
     local alpha = math.clamp((x - speedTrack.AbsolutePosition.X) / width, 0, 1)
-    setTestSpeed(math.floor(alpha * 100 + 0.5))
+    setTestSpeed(math.floor(alpha * 100 + 0.5), false)
 end
 local sliderDragging = false
 speedTrack.InputBegan:Connect(function(input)
@@ -741,9 +748,13 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        sliderDragging = false
+        if sliderDragging then
+            sliderDragging = false
+            setTestSpeed(selectedSpeed, true)
+        end
     end
 end)
+setTestSpeed(16, false)
 
 local function refreshSpawnTargets()
     spawnTargets = {}
