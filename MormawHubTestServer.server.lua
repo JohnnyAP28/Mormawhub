@@ -92,6 +92,7 @@ remote.OnServerEvent:Connect(function(player, action, value)
         if value == true then
             local _, humanoid = getCharacterParts(player)
             if not humanoid then
+                remote:FireClient(player, "TestMode", false)
                 sendStatus(player, "Não foi possível ativar: o personagem ainda não tem Humanoid.")
                 return
             end
