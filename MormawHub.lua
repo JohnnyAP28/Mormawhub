@@ -387,7 +387,7 @@ local aimAssistConnection
 local testRemote = ReplicatedStorage:FindFirstChild("MormawHubTestRemote")
 local selectedSpawnIndex = 1
 local spawnTargets = {}
-local testStatus = label(testsFrame, "MODO DE TESTE DESLIGADO. Instale o script de servidor do repositório para validar velocidade e teleporte.", UDim2.new(1, -6, 0, 48), UDim2.new(), 11, Color3.fromRGB(220, 190, 110))
+local testStatus = label(testsFrame, "Diagnóstico: verificando conexão com o servidor de teste...", UDim2.new(1, -6, 0, 58), UDim2.new(), 11, Color3.fromRGB(220, 190, 110))
 testStatus.LayoutOrder = 2
 testStatus.TextYAlignment = Enum.TextYAlignment.Top
 
@@ -816,9 +816,13 @@ stopFlight = function()
     if flyDownButton and flyDownButton.Parent then flyDownButton.Visible = false end
 end
 
+local function showRemoteMissing(actionName)
+    testStatus.Text = actionName .. " precisa do servidor de teste, mas MormawHubTestRemote não foi encontrado. O arquivo MormawHubTestServer.server.lua precisa estar como Script em ServerScriptService na experiência; depois reinicie o servidor. Voo, Aim e parar animações são controles locais e podem ser testados separadamente."
+end
+
 testModeButton.Activated:Connect(function()
     if not testRemote then
-        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua em ServerScriptService e use uma conta autorizada."
+        showRemoteMissing("Modo de teste / Speed / Teleport")
         return
     end
     testModeButton.Text = "SOLICITANDO AUTORIZAÇÃO..."
@@ -841,10 +845,24 @@ local function bindTestRemote(remote)
         end
     end)
 end
-if testRemote then bindTestRemote(testRemote) end
+if testRemote then
+    bindTestRemote(testRemote)
+    testStatus.Text = "Servidor de teste encontrado. Toque em ATIVAR MODO DE TESTE para solicitar autorização."
+else
+    showRemoteMissing("Modo de teste / Speed / Teleport")
+end
 trackConnection(ReplicatedStorage.ChildAdded:Connect(function(child)
     if child.Name == "MormawHubTestRemote" and child:IsA("RemoteEvent") and not testRemote then
         bindTestRemote(child)
+        testStatus.Text = "Servidor de teste conectado. Toque em ATIVAR MODO DE TESTE para solicitar autorização."
+    end
+end))
+trackConnection(ReplicatedStorage.ChildRemoved:Connect(function(child)
+    if child == testRemote then
+        testRemote = nil
+        testModeEnabled = false
+        testModeButton.Text = "ATIVAR MODO DE TESTE"
+        showRemoteMissing("Modo de teste / Speed / Teleport")
     end
 end))
 
@@ -859,7 +877,7 @@ setTestSpeed = function(value, applyToServer)
         return
     end
     if not testRemote then
-        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua em ServerScriptService."
+        showRemoteMissing("Aplicar Speed")
         return
     end
     testRemote:FireServer("SetSpeed", selectedSpeed)
@@ -927,10 +945,6 @@ spawnTargetButton.Activated:Connect(function()
 end)
 
 flyButton.Activated:Connect(function()
-    if not testModeEnabled then
-        testStatus.Text = "Ative o MODO DE TESTE antes de iniciar o voo."
-        return
-    end
     if flyEnabled then
         stopFlight()
         testStatus.Text = "Voo de teste desativado."
@@ -962,7 +976,7 @@ flyButton.Activated:Connect(function()
         else vertical = flyVerticalDirection * 35 end
         flyVelocity.Velocity = direction * 42 + Vector3.new(0, vertical, 0)
     end)
-    testStatus.Text = "Voo ativo: use o analógico para mover; segure ▲/▼ para subir/descer. Teclado: Espaço/Ctrl."
+    testStatus.Text = "Voo LOCAL ativo: use o analógico e segure ▲/▼. Teclado: Espaço/Ctrl. O servidor do jogo pode corrigir o movimento."
 end)
 
 local function bindVerticalHold(control, direction)
@@ -988,10 +1002,6 @@ stopAimAssist = function()
 end
 
 aimAssistButton.Activated:Connect(function()
-    if not testModeEnabled then
-        testStatus.Text = "Ative o modo de teste autorizado antes de usar o aim de teste."
-        return
-    end
     if aimAssistEnabled then
         stopAimAssist()
         testStatus.Text = "Aim de teste desativado."
@@ -1020,7 +1030,7 @@ aimAssistButton.Activated:Connect(function()
         end
         if bestPart then camera.CFrame = CFrame.lookAt(camera.CFrame.Position, bestPart.Position) end
     end)
-    testStatus.Text = "Aim de teste ativo para NPCs com a tag MormawAimTarget (até 250 studs)."
+    testStatus.Text = "Aim LOCAL ativo para NPCs marcados com MormawAimTarget (até 250 studs); não mira jogadores."
 end)
 
 spawnButton.Activated:Connect(function()
@@ -1029,7 +1039,7 @@ spawnButton.Activated:Connect(function()
         return
     end
     if not testRemote then
-        testStatus.Text = "Remote de teste ausente. Instale MormawHubTestServer.server.lua no servidor."
+        showRemoteMissing("Teleport")
         return
     end
     refreshSpawnTargets()
@@ -1042,10 +1052,6 @@ spawnButton.Activated:Connect(function()
 end)
 
 stopAnimations.Activated:Connect(function()
-    if not testModeEnabled then
-        testStatus.Text = "Ative o MODO DE TESTE antes de testar animações."
-        return
-    end
     local humanoid, character = getTestHumanoid()
     local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
     if not animator then
