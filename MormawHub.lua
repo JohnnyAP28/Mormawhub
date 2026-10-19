@@ -90,7 +90,7 @@ local panel = Instance.new("Frame")
 panel.Name = "MainPanel"
 panel.AnchorPoint = Vector2.new(0.5, 0.5)
 panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.Size = UDim2.fromOffset(390, 360)
+panel.Size = UDim2.fromOffset(390, 410)
 panel.BackgroundColor3 = Color3.fromRGB(13, 15, 21)
 panel.BorderSizePixel = 0
 panel.Parent = gui
@@ -99,7 +99,7 @@ stroke(panel, Color3.fromRGB(50, 55, 69), 0.1)
 
 local sizeLimit = Instance.new("UISizeConstraint")
 sizeLimit.MinSize = Vector2.new(300, 300)
-sizeLimit.MaxSize = Vector2.new(460, 460)
+sizeLimit.MaxSize = Vector2.new(460, 520)
 sizeLimit.Parent = panel
 
 local header = Instance.new("Frame")
@@ -127,9 +127,10 @@ tabs.Position = UDim2.fromOffset(14, 78)
 tabs.Size = UDim2.new(1, -28, 0, 34)
 tabs.Parent = panel
 
-local homeTab = button(tabs, "Início", UDim2.new(0.33, -5, 1, 0), UDim2.fromOffset(0, 0))
-local performanceTab = button(tabs, "Desempenho", UDim2.new(0.34, -5, 1, 0), UDim2.new(0.33, 3, 0, 0))
-local aboutTab = button(tabs, "Sobre", UDim2.new(0.33, -5, 1, 0), UDim2.new(0.67, 5, 0, 0))
+local homeTab = button(tabs, "Início", UDim2.new(0.25, -5, 1, 0), UDim2.fromOffset(0, 0))
+local halloweenTab = button(tabs, "Halloween", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.25, 2, 0, 0))
+local performanceTab = button(tabs, "Gráficos", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.50, 4, 0, 0))
+local settingsTab = button(tabs, "Ajustes", UDim2.new(0.25, -5, 1, 0), UDim2.new(0.75, 6, 0, 0))
 
 local content = Instance.new("Frame")
 content.BackgroundTransparency = 1
@@ -152,25 +153,133 @@ local shadows = makeAction("Desativar sombras globais", 96)
 local effects = makeAction("Desativar efeitos pós-processamento", 142)
 local restore = makeAction("Restaurar configurações guardadas", 188)
 
-local function showPage(page)
-    status.Visible = page == "home" or page == "about"
-    lowGraphics.Visible = page == "performance"
-    shadows.Visible = page == "performance"
-    effects.Visible = page == "performance"
-    restore.Visible = page == "performance"
+-- Rastreador manual do evento: não lê nem altera o estado do jogo.
+local trackerState = {}
+local trackerItems = {
+    "Echo: encontrar o colar",
+    "Echo: encontrar o osso",
+    "Echo: encontrar o ursinho",
+    "Echo: encontrar a foto fantasma",
+    "Falar com o Ghost Fisherman",
+    "Conseguir a Haunted Rod",
+    "Pescar e obter o ticket do Phantom Express",
+    "Visitar o Phantom Express / área Spectral",
+    "Coletar Candy Corn durante o evento",
+}
+for _, item in ipairs(trackerItems) do trackerState[item] = false end
 
-    if page == "home" then
-        status.Text = "MormawHub está ativo.\nUse Desempenho para reduzir efeitos locais."
-    elseif page == "about" then
-        status.Text = "MormawHub • Projeto brasileiro 🇧🇷\nInterface local de demonstração. Não executa farm, roubo ou teleporte."
-    else
+local halloweenFrame = Instance.new("ScrollingFrame")
+halloweenFrame.Name = "HalloweenTracker"
+halloweenFrame.BackgroundTransparency = 1
+halloweenFrame.BorderSizePixel = 0
+halloweenFrame.Position = UDim2.fromOffset(0, 0)
+halloweenFrame.Size = UDim2.new(1, 0, 1, 0)
+halloweenFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+halloweenFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+halloweenFrame.ScrollBarThickness = 4
+halloweenFrame.ScrollBarImageColor3 = Color3.fromRGB(91, 145, 105)
+halloweenFrame.Visible = false
+halloweenFrame.Parent = content
+
+local trackerLayout = Instance.new("UIListLayout")
+trackerLayout.Padding = UDim.new(0, 6)
+trackerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+trackerLayout.Parent = halloweenFrame
+
+local trackerPadding = Instance.new("UIPadding")
+trackerPadding.PaddingRight = UDim.new(0, 5)
+trackerPadding.PaddingBottom = UDim.new(0, 5)
+trackerPadding.Parent = halloweenFrame
+
+local trackerProgress = label(halloweenFrame, "Progresso do evento: 0/9", UDim2.new(1, -6, 0, 28), UDim2.new(), 13, Color3.fromRGB(125, 220, 157))
+trackerProgress.LayoutOrder = 1
+
+local trackerButtons = {}
+local function refreshTracker()
+    local done = 0
+    for _, item in ipairs(trackerItems) do
+        if trackerState[item] then done += 1 end
+    end
+    trackerProgress.Text = "Progresso do evento: " .. done .. "/" .. #trackerItems
+    for item, b in pairs(trackerButtons) do
+        b.Text = (trackerState[item] and "   ☑  " or "   □  ") .. item
+        b.BackgroundColor3 = trackerState[item] and Color3.fromRGB(25, 57, 39) or Color3.fromRGB(29, 32, 42)
+    end
+end
+
+for index, item in ipairs(trackerItems) do
+    local b = button(halloweenFrame, "   □  " .. item, UDim2.new(1, -6, 0, 34), UDim2.new())
+    b.LayoutOrder = index + 1
+    b.TextXAlignment = Enum.TextXAlignment.Left
+    b.TextSize = 11
+    trackerButtons[item] = b
+    b.Activated:Connect(function()
+        trackerState[item] = not trackerState[item]
+        refreshTracker()
+    end)
+end
+
+local trackerTips = label(halloweenFrame,
+    "Dica: o checklist é manual e vale apenas enquanto esta interface estiver aberta. Os nomes e etapas podem mudar com atualizações.",
+    UDim2.new(1, -6, 0, 46), UDim2.new(), 10, Color3.fromRGB(155, 161, 178))
+trackerTips.LayoutOrder = #trackerItems + 2
+trackerTips.TextYAlignment = Enum.TextYAlignment.Top
+
+local settingsFrame = Instance.new("Frame")
+settingsFrame.Name = "SettingsPage"
+settingsFrame.BackgroundTransparency = 1
+settingsFrame.Position = UDim2.fromOffset(0, 0)
+settingsFrame.Size = UDim2.new(1, 0, 1, 0)
+settingsFrame.Visible = false
+settingsFrame.Parent = content
+
+local resetTracker = button(settingsFrame, "Zerar checklist do Halloween", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 0))
+local toggleTips = button(settingsFrame, "Ocultar dicas do evento", UDim2.new(1, 0, 0, 38), UDim2.fromOffset(0, 48))
+local tipsVisible = true
+local settingsInfo = label(settingsFrame,
+    "Preferências locais. O checklist não é enviado ao Roblox nem sincronizado entre sessões.",
+    UDim2.new(1, 0, 0, 62), UDim2.fromOffset(0, 100), 11, Color3.fromRGB(155, 161, 178))
+settingsInfo.TextYAlignment = Enum.TextYAlignment.Top
+
+local function showPage(page)
+    local isHome = page == "home"
+    local isPerformance = page == "performance"
+    local isHalloween = page == "halloween"
+    local isSettings = page == "settings"
+    status.Visible = isHome
+    halloweenFrame.Visible = isHalloween
+    settingsFrame.Visible = isSettings
+    lowGraphics.Visible = isPerformance
+    shadows.Visible = isPerformance
+    effects.Visible = isPerformance
+    restore.Visible = isPerformance
+
+    if isHome then
+        status.Text = "MormawHub está ativo.\nHalloween: checklist manual do evento.\nGráficos: ajustes locais de iluminação."
+    elseif isPerformance then
         status.Text = "Ajustes locais de iluminação e efeitos."
     end
 end
 
+resetTracker.Activated:Connect(function()
+    for _, item in ipairs(trackerItems) do trackerState[item] = false end
+    refreshTracker()
+    settingsInfo.Text = "Checklist zerado. Marque cada etapa conforme concluir no jogo."
+end)
+
+toggleTips.Activated:Connect(function()
+    tipsVisible = not tipsVisible
+    trackerTips.Visible = tipsVisible
+    toggleTips.Text = tipsVisible and "Ocultar dicas do evento" or "Mostrar dicas do evento"
+    settingsInfo.Text = tipsVisible and "Dicas ativadas no rastreador do Halloween." or "Dicas ocultadas no rastreador do Halloween."
+end)
+
 homeTab.Activated:Connect(function() showPage("home") end)
+halloweenTab.Activated:Connect(function() showPage("halloween") end)
 performanceTab.Activated:Connect(function() showPage("performance") end)
-aboutTab.Activated:Connect(function() showPage("about") end)
+settingsTab.Activated:Connect(function() showPage("settings") end)
+
+refreshTracker()
 
 local function setEffectsEnabled(enabled)
     for _, obj in ipairs(Lighting:GetChildren()) do
